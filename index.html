@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<script>
+/* يطبّق الثيم واللغة قبل الرسم — يمنع الوميض */
+(function () {
+  try {
+    var th = localStorage.getItem('HR_THEME');
+    if (th !== 'dark' && th !== 'light') {
+      th = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    var lg = localStorage.getItem('HR_LANG') === 'en' ? 'en' : 'ar';
+    var d = document.documentElement;
+    d.setAttribute('data-theme', th);
+    d.setAttribute('lang', lg);
+    d.setAttribute('dir', lg === 'en' ? 'ltr' : 'rtl');
+  } catch (e) {}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+/* ============================================================
+   Styles.html · الألوان كلها متغيرات — ممنوع ألوان ثابتة في style مضمّن
+   ============================================================ */
+:root{
+  --brand:#C4151C; --brand-dark:#9B1016; --brand-light:#FDEBEC; --brand-ink:#A3121A;
+  --navy:#1B2A47; --on-navy:#FFFFFF; --on-navy-2:#B9C6DA; --navy-hover:rgba(255,255,255,.1);
+  --card:#FFFFFF; --page:#F4F6FA; --page2:#F8FAFC;
+  --text:#1A2942; --text-2:#5B6B82; --text-3:#94A3B8;
+  --border:#E5E7EB; --border-strong:#CBD5E1;
+  --input-bg:#FFFFFF; --input-border:#D3D9E2;
+  --ok-bg:#DCFCE7; --ok-fg:#166534;
+  --warn-bg:#FFFBEB; --warn-fg:#92400E;
+  --bad-bg:#FEE2E2; --bad-fg:#991B1B;
+  --info-bg:#EFF6FF; --info-fg:#1E40AF;
+  --star:#D97706; --star-off:#94A3B8;
+  --err:#DC2626; --ok:#16A34A; --warn:#D97706; --info:#2E6FD9;
+  --overlay:rgba(10,15,25,.55);
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 10px 28px rgba(16,24,40,.07);
+  --focus-border:#1B2A47; --focus:0 0 0 3px rgba(27,42,71,.16);
+  --radius:12px;
+  color-scheme:light;
+}
+[data-theme="dark"]{
+  --brand-light:rgba(196,21,28,.18); --brand-ink:#FF9499;
+  --navy:#131D31; --on-navy-2:#A9B6CB;
+  --card:#1A2233; --page:#0F1420; --page2:#131B2A;
+  --text:#E8EDF4; --text-2:#9AA7BC; --text-3:#6B7A92;
+  --border:#2A3547; --border-strong:#3A475C;
+  --input-bg:#131B2A; --input-border:#344157;
+  --ok-bg:rgba(34,197,94,.16); --ok-fg:#86EFAC;
+  --warn-bg:rgba(245,158,11,.16); --warn-fg:#FCD34D;
+  --bad-bg:rgba(239,68,68,.15); --bad-fg:#FCA5A5;
+  --info-bg:rgba(96,165,250,.15); --info-fg:#93C5FD;
+  --star:#FBBF24; --star-off:#6B7A92;
+  --err:#F87171; --ok:#4ADE80; --warn:#FBBF24; --info:#60A5FA;
+  --overlay:rgba(0,0,0,.65);
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.35);
+  --focus-border:#8EA8D6; --focus:0 0 0 3px rgba(142,168,214,.25);
+  color-scheme:dark;
+}
+
+/* ---------- الأساس ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:var(--page);color:var(--text);
+  font-family:"Cairo",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+  font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;line-height:1.3;color:var(--text)}
+p{margin:0}
+a{color:var(--brand-ink)}
+button,input,select,textarea{font:inherit}
+:focus-visible{outline:2px solid var(--focus-border);outline-offset:2px}
+[hidden]{display:none!important}
+.muted{color:var(--text-2)}
+.small{font-size:13px}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* ---------- الأزرار ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;
+  padding:10px 18px;border-radius:var(--radius);border:1.5px solid transparent;
+  font-weight:700;font-size:15px;cursor:pointer;text-decoration:none;white-space:nowrap;
+  transition:background-color .15s,border-color .15s}
+.btn:disabled,.btn[aria-busy="true"]{opacity:.7;cursor:not-allowed}
+.btn-primary{background:var(--brand);color:#FFFFFF}
+.btn-primary:hover:not(:disabled){background:var(--brand-dark)}
+.btn-ghost{background:transparent;border-color:var(--border-strong);color:var(--text)}
+.btn-ghost:hover:not(:disabled){border-color:var(--text-3)}
+.btn-block{width:100%}
+.btn-link{background:none;border:none;color:var(--brand-ink);font-weight:700;padding:6px 4px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.icon-btn{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:10px;border:none;background:transparent;color:var(--text);cursor:pointer;font-size:18px}
+.icon-btn:hover{background:var(--page2)}
+.lang-code{font-size:13px;font-weight:800;letter-spacing:.3px}
+.spin{display:inline-block;animation:spin .8s linear infinite}
+
+/* ---------- الحقول ---------- */
+.field{margin-bottom:16px}
+.lbl{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.control{position:relative}
+.input{width:100%;min-height:48px;padding:11px 14px;border:1.5px solid var(--input-border);
+  border-radius:var(--radius);background:var(--input-bg);color:var(--text);
+  font-size:16px;line-height:1.4;transition:border-color .15s,box-shadow .15s}
+.input::placeholder{color:var(--text-3);opacity:1}
+.input:focus{outline:none;border-color:var(--focus-border);box-shadow:var(--focus)}
+.input.has-icon{padding-inline-start:42px}
+.input.has-reveal{padding-inline-end:50px}
+.control>.ico{position:absolute;inset-inline-start:14px;top:50%;transform:translateY(-50%);
+  color:var(--text-3);font-size:17px;pointer-events:none;line-height:1}
+.control>.reveal{position:absolute;inset-inline-end:5px;top:50%;transform:translateY(-50%);
+  width:40px;height:40px;border:none;background:transparent;color:var(--text-2);
+  border-radius:9px;cursor:pointer;font-size:17px}
+.control>.reveal:hover{background:var(--page2)}
+.field.invalid .input,.field.invalid .input:focus{border-color:var(--err);background:var(--bad-bg)}
+.field.invalid .input:focus{box-shadow:0 0 0 3px rgba(220,38,38,.16)}
+.field.invalid .ico{color:var(--err)}
+.err-msg{display:none;color:var(--err);font-size:12.5px;font-weight:600;margin-top:5px}
+.field.invalid .err-msg{display:block}
+.hint{font-size:12.5px;color:var(--text-2);margin-top:5px}
+textarea.input{min-height:100px;resize:vertical;line-height:1.6}
+select.input{cursor:pointer}
+/* أرقام وإيميلات: اتجاه LTR عشان ترتيب المجموعات مايتقلبش، مع محاذاة الصفحة */
+.input.ltr{direction:ltr;text-align:right}
+input[type="date"].input,input[type="datetime-local"].input{min-width:0;max-width:100%}
+[dir="ltr"] .input.ltr{text-align:left}
+.opt{font-weight:600;font-size:12px;color:var(--text-3);margin-inline-start:6px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* فخ البوتات — مخفي بالقص مش بـ left:-9999px (اللي بيعمل سكرول عرضي في RTL) */
+.hp{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);opacity:0;pointer-events:none}
+.field.invalid .hint{display:none}
+
+/* ---------- الشعار على خلفية كحلية ---------- */
+.brand-mark{width:60px;height:60px;border-radius:14px;background:#FFFFFF;color:#C4151C;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:28px;flex-shrink:0}
+.brand-mark img{width:82%;height:82%;object-fit:contain}
+
+/* ---------- البطاقات والشارات ---------- */
+.container{max-width:1200px;margin:0 auto;padding:16px 12px 40px}
+.card{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
+.card-pad{padding:18px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;
+  font-size:12px;font-weight:700;background:var(--page2);color:var(--text-2);border:1px solid var(--border)}
+.badge-brand{background:var(--brand-light);color:var(--brand-ink);border-color:transparent}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--brand);color:#FFFFFF;
+  display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+@media (min-width:760px){.container{padding:24px 20px 48px}.card-pad{padding:22px}}
+
+/* ---------- حالات المكالمة (مشتركة: اللوحة · الإدارة · التقارير) ---------- */
+.st{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;border:1px solid transparent;line-height:1.7}
+.st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.st-pending{background:var(--page2);color:var(--text-2);border-color:var(--border)}
+.st-done{background:var(--ok-bg);color:var(--ok-fg)}
+.st-no_answer{background:var(--warn-bg);color:var(--warn-fg)}
+.st-postponed{background:var(--info-bg);color:var(--info-fg)}
+.st-rejected{background:var(--bad-bg);color:var(--bad-fg)}
+.ltr-text{direction:ltr;unicode-bidi:isolate}
+
+/* ---------- الشريط العلوي ---------- */
+.topbar{background:var(--navy);color:var(--on-navy);border-bottom:3px solid var(--brand);position:sticky;top:0;z-index:50}
+.tb-inner{max-width:1200px;margin:0 auto;padding:8px 12px 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tb-brand{display:flex;align-items:center;gap:10px;color:var(--on-navy);text-decoration:none;font-weight:800;font-size:16px;margin-inline-end:auto;min-width:0}
+.tb-logo{width:34px;height:34px;border-radius:9px;background:#FFFFFF;color:#C4151C;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:17px}
+.tb-logo img{width:84%;height:84%;object-fit:contain}
+.tb-actions{display:flex;align-items:center;gap:2px}
+.tb-actions .icon-btn{color:var(--on-navy)}
+.tb-actions .icon-btn:hover{background:var(--navy-hover)}
+.tb-nav{order:3;width:100%;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tb-nav::-webkit-scrollbar{display:none}
+.tb-nav a{display:inline-flex;align-items:center;gap:7px;color:var(--on-navy-2);text-decoration:none;
+  font-weight:700;font-size:14px;padding:7px 12px;border-radius:8px;white-space:nowrap}
+.tb-nav a:hover{color:var(--on-navy);background:var(--navy-hover)}
+.tb-nav a[aria-current="page"]{color:var(--on-navy);background:rgba(255,255,255,.14)}
+.tb-user{position:relative;margin-inline-start:4px}
+.tb-user-btn{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.16);color:var(--on-navy);border-radius:10px;
+  padding-block:4px;padding-inline:4px 8px;cursor:pointer}
+.tb-user-btn:hover{background:rgba(255,255,255,.14)}
+.tb-user-meta{display:none;flex-direction:column;text-align:start;line-height:1.25}
+.tb-user-name{font-size:13px;font-weight:700;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-user-role{font-size:11px;color:var(--on-navy-2)}
+.tb-caret{font-size:11px;color:var(--on-navy-2)}
+@media (min-width:760px){
+  .tb-inner{padding:6px 20px;gap:12px}
+  .tb-brand{margin-inline-end:10px}
+  .tb-nav{order:0;width:auto}
+  .tb-actions{margin-inline-start:auto}
+  .tb-user-meta{display:flex}
+}
+
+/* ---------- القائمة المنسدلة ---------- */
+.menu-pop{position:absolute;inset-inline-end:0;top:calc(100% + 8px);min-width:230px;background:var(--card);
+  color:var(--text);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:none;z-index:60}
+.menu-pop.open{display:block}
+.menu-head{padding:8px 10px 10px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.menu-name{font-weight:800;font-size:14px}
+.menu-sub{font-size:12.5px;color:var(--text-2)}
+.menu-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border:none;background:none;
+  border-radius:8px;color:var(--text);font-weight:600;font-size:14px;cursor:pointer;text-align:start}
+.menu-item:hover{background:var(--page2)}
+.menu-item.danger{color:var(--bad-fg)}
+
+/* ---------- النوافذ (Bottom sheet على الموبايل) ---------- */
+.modal{position:fixed;inset:0;z-index:1000;display:none;align-items:flex-end;justify-content:center;background:var(--overlay)}
+.modal.open{display:flex}
+.modal-box{width:100%;max-width:460px;background:var(--card);color:var(--text);border-radius:18px 18px 0 0;
+  box-shadow:var(--shadow);max-height:92vh;overflow:auto}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 14px 18px;border-bottom:1px solid var(--border)}
+.modal-head h2{font-size:17px;font-weight:800}
+.modal-body{padding:18px}
+.form-actions{display:flex;gap:10px;margin-top:8px}
+.form-actions .btn{flex:1}
+@media (min-width:600px){.modal{align-items:center;padding:16px}.modal-box{border-radius:16px}}
+
+/* ---------- التنبيهات ---------- */
+#toastBox{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;width:calc(100% - 28px);
+  max-width:420px;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;display:flex;align-items:flex-start;gap:10px;background:var(--card);color:var(--text);
+  border:1px solid var(--border);border-inline-start:4px solid var(--info);border-radius:11px;
+  padding:12px 14px;font-size:14px;font-weight:600;box-shadow:var(--shadow);transition:opacity .3s}
+.toast.hide{opacity:0}
+.toast i{font-size:17px;line-height:1.4;color:var(--info)}
+.toast-success{border-inline-start-color:var(--ok)}.toast-success i{color:var(--ok)}
+.toast-error{border-inline-start-color:var(--err)}.toast-error i{color:var(--err)}
+.toast-warning{border-inline-start-color:var(--warn)}.toast-warning i{color:var(--warn)}
+
+/* ---------- التحميل · الحجب · المتابعة ---------- */
+#preload{position:fixed;inset:0;z-index:3000;background:var(--page);display:flex;align-items:center;justify-content:center}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--brand);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.blocker{position:fixed;inset:0;z-index:2000;background:var(--page);display:flex;align-items:center;justify-content:center;padding:20px}
+.blocker-card{max-width:380px;width:100%;text-align:center;background:var(--card);color:var(--text);
+  border:1px solid var(--border);border-radius:16px;padding:28px 22px;box-shadow:var(--shadow)}
+.blocker-ico{width:62px;height:62px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;
+  font-size:27px;background:var(--brand-light);color:var(--brand-ink)}
+.blocker-card h2{font-size:19px;font-weight:800;margin-bottom:6px}
+.blocker-card p{margin-bottom:20px}
+.continue-bar{position:fixed;left:12px;right:12px;bottom:12px;z-index:2500;max-width:520px;margin:0 auto;
+  display:flex;align-items:center;gap:12px;background:var(--card);color:var(--text);
+  border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:10px 10px 10px 14px}
+.continue-bar span{flex:1;font-size:13.5px;font-weight:600}
+</style>
+
+<style>
+/* ---------- apply ---------- */
+.ap-head{background:var(--navy);color:var(--on-navy);border-bottom:5px solid var(--brand)}
+.ap-head-inner{max-width:680px;margin:0 auto;padding:10px 14px 24px}
+.ap-tools{display:flex;justify-content:flex-end;gap:2px}
+.ap-tools .icon-btn{color:var(--on-navy)}
+.ap-tools .icon-btn:hover{background:var(--navy-hover)}
+.ap-brand{display:flex;align-items:center;gap:14px;margin-top:2px;padding-inline:2px}
+.ap-company{font-size:13px;font-weight:700;color:var(--on-navy-2)}
+.ap-head h1{font-size:25px;font-weight:800;color:var(--on-navy);line-height:1.25}
+.ap-sub{margin-top:14px;font-size:14px;color:var(--on-navy-2);max-width:52ch}
+
+.ap-wrap{max-width:680px;margin:0 auto;padding:18px 12px 28px}
+.ap-card{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow)}
+.ap-sec{padding:20px 16px 6px;border-bottom:1px solid var(--border)}
+.ap-sec-title{display:flex;align-items:center;gap:8px;font-size:15.5px;font-weight:800;margin-bottom:14px;color:var(--text)}
+.ap-sec-title i{color:var(--brand-ink);font-size:17px}
+.grid2{display:grid;grid-template-columns:1fr;column-gap:14px}
+.job-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.job-meta:empty{display:none}
+.age-ok{color:var(--ok-fg);font-weight:700}
+.age-bad{color:var(--err);font-weight:700}
+
+#f_cv{position:relative}
+.cv-drop{display:flex;align-items:center;gap:14px;border:1.5px dashed var(--border-strong);border-radius:12px;
+  padding:16px;cursor:pointer;background:var(--page2);transition:border-color .15s,background-color .15s}
+.cv-drop:hover,.cv-drop.drag{border-color:var(--focus-border)}
+#fCv:focus-visible + .cv-drop{outline:2px solid var(--focus-border);outline-offset:2px}
+.cv-drop>i{font-size:28px;color:var(--brand-ink);line-height:1}
+.cv-drop strong{display:block;font-size:14.5px;color:var(--text)}
+.cv-drop span{display:block;font-size:12.5px;color:var(--text-2)}
+.field.invalid .cv-drop{border-color:var(--err);background:var(--bad-bg)}
+.cv-file{display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:12px;
+  padding-block:8px;padding-inline:14px 6px;background:var(--page2)}
+.cv-file>i{font-size:24px;color:var(--brand-ink)}
+.cv-info{flex:1;min-width:0}
+.cv-name{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:start;unicode-bidi:plaintext}
+.cv-size{font-size:12px;color:var(--text-2)}
+
+.ap-foot{padding:18px 16px 20px}
+.ap-privacy{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--text-2);margin-bottom:14px}
+.ap-privacy i{color:var(--text-3);font-size:14px;line-height:1.5}
+
+.ap-state{padding:38px 22px 30px;text-align:center}
+.ap-state h2{font-size:21px;font-weight:800;margin-bottom:6px}
+.state-ico{width:76px;height:76px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:38px;
+  background:var(--page2);color:var(--text-2)}
+.state-ico.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.ref-box{display:inline-flex;flex-direction:column;align-items:center;gap:2px;border:1.5px dashed var(--border-strong);
+  border-radius:12px;padding:10px 26px;margin:20px 0 6px}
+.ref-box span{font-size:12.5px;color:var(--text-2)}
+.ref-box strong{font-size:24px;font-weight:800;letter-spacing:1px;color:var(--brand-ink);direction:ltr}
+.done-job{margin-top:2px;font-weight:700}
+.done-actions{display:flex;flex-direction:column;gap:8px;margin-top:22px}
+.done-actions .btn{width:100%}
+@media (min-width:520px){.done-actions{flex-direction:row}.done-actions .btn{flex:1}}
+.ap-legal{text-align:center;font-size:12px;color:var(--text-3);padding-top:18px}
+
+@media (min-width:600px){
+  .ap-head-inner{padding:14px 20px 34px}
+  .ap-head h1{font-size:32px}
+  .ap-wrap{padding:24px 16px 36px}
+  .ap-sec{padding:24px 24px 8px}
+  .ap-foot{padding:20px 24px 24px}
+  .grid2{grid-template-columns:1fr 1fr}
+  .grid2 .span2{grid-column:1 / -1}
+}
+</style>
+</head>
+<body>
+<div id="toastBox" role="status" aria-live="polite"></div>
+
+<header class="ap-head">
+  <div class="ap-head-inner">
+    <div class="ap-tools">
+      <button type="button" class="icon-btn" onclick="toggleLang()" data-i18n-label="ui.lang"><span class="lang-code" data-lang-code>EN</span></button>
+      <button type="button" class="icon-btn" onclick="toggleTheme()" data-i18n-label="ui.theme"><i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i></button>
+    </div>
+    <div class="ap-brand">
+      <div class="brand-mark" data-brand-logo></div>
+      <div>
+        <div class="ap-company" id="apCompany">Cairo 3A</div>
+        <h1 data-i18n="ap.title">التقديم على وظيفة</h1>
+      </div>
+    </div>
+    <p class="ap-sub" data-i18n="ap.intro"></p>
+  </div>
+</header>
+
+<main class="ap-wrap">
+
+  <!-- لا توجد وظائف / خطأ إعداد -->
+  <section class="ap-card ap-state" id="apClosed" hidden>
+    <div class="state-ico"><i class="bi bi-briefcase" aria-hidden="true"></i></div>
+    <h2 id="closedTitle"></h2>
+    <p class="muted" id="closedBody"></p>
+  </section>
+
+  <!-- النموذج -->
+  <form class="ap-card" id="apForm" onsubmit="return submitApplication(event)" novalidate hidden>
+    <input type="text" id="website" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+    <section class="ap-sec">
+      <h2 class="ap-sec-title"><i class="bi bi-briefcase-fill" aria-hidden="true"></i><span data-i18n="ap.secJob">الوظيفة</span></h2>
+      <div class="field" id="f_job">
+        <label class="lbl" for="fJob" data-i18n="ap.job">الوظيفة المطلوبة</label>
+        <select class="input" id="fJob"></select>
+        <div class="job-meta" id="jobMeta"></div>
+        <div class="err-msg" data-i18n="ap.jobReq"></div>
+      </div>
+    </section>
+
+    <section class="ap-sec">
+      <h2 class="ap-sec-title"><i class="bi bi-person-vcard-fill" aria-hidden="true"></i><span data-i18n="ap.secYou">بياناتك</span></h2>
+      <div class="grid2">
+        <div class="field span2" id="f_name">
+          <label class="lbl" for="fName" data-i18n="ap.name">الاسم بالكامل</label>
+          <input class="input" id="fName" name="name" autocomplete="name" maxlength="80" enterkeyhint="next" data-i18n-ph="ap.namePh">
+          <div class="err-msg" data-i18n="ap.nameReq"></div>
+        </div>
+
+        <div class="field" id="f_mobile">
+          <label class="lbl" for="fMobile" data-i18n="ap.mobile">رقم الموبايل</label>
+          <input class="input ltr" id="fMobile" name="tel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" enterkeyhint="next" placeholder="01xxxxxxxxx">
+          <div class="err-msg" data-i18n="ap.mobileReq"></div>
+        </div>
+
+        <div class="field" id="f_email">
+          <label class="lbl" for="fEmail"><span data-i18n="ap.email">البريد الإلكتروني</span><span class="opt" data-i18n="ap.optional">اختياري</span></label>
+          <input class="input ltr" id="fEmail" name="email" type="email" inputmode="email" autocomplete="email" maxlength="120" enterkeyhint="next" placeholder="name@example.com">
+          <div class="err-msg" data-i18n="ap.emailReq"></div>
+        </div>
+
+        <div class="field" id="f_birth">
+          <label class="lbl" for="fBirth" data-i18n="ap.birth">تاريخ الميلاد</label>
+          <input class="input ltr" id="fBirth" type="date">
+          <div class="hint" id="ageHint" data-i18n="ap.birthHint"></div>
+          <div class="err-msg" data-i18n="ap.birthReq"></div>
+        </div>
+
+        <div class="field" id="f_gov">
+          <label class="lbl" for="fGov" data-i18n="ap.gov">المحافظة</label>
+          <select class="input" id="fGov"></select>
+          <div class="err-msg" data-i18n="ap.govReq"></div>
+        </div>
+
+        <div class="field" id="f_edu">
+          <label class="lbl" for="fEdu" data-i18n="ap.edu">المؤهل</label>
+          <select class="input" id="fEdu"></select>
+          <div class="err-msg" data-i18n="ap.eduReq"></div>
+        </div>
+
+        <div class="field" id="f_yrs">
+          <label class="lbl" for="fYrs" data-i18n="ap.yrs">سنوات الخبرة</label>
+          <input class="input" id="fYrs" type="text" inputmode="numeric" maxlength="2" enterkeyhint="done">
+          <div class="hint" data-i18n="ap.yrsHint"></div>
+          <div class="err-msg" data-i18n="ap.yrsReq"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ap-sec">
+      <h2 class="ap-sec-title"><i class="bi bi-file-earmark-person-fill" aria-hidden="true"></i><span data-i18n="ap.secCv">السيرة الذاتية</span><span class="opt" id="cvOpt" data-i18n="ap.optional">اختياري</span></h2>
+      <div class="field" id="f_cv">
+        <input type="file" id="fCv" class="sr-only" accept=".pdf,.doc,.docx,image/*" onchange="pickCv(this)">
+        <label for="fCv" class="cv-drop" id="cvDrop">
+          <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+          <div>
+            <strong data-i18n="ap.cvPick">اختار ملف السيرة الذاتية</strong>
+            <span data-i18n="ap.cvHint"></span>
+          </div>
+        </label>
+        <div class="cv-file" id="cvFile" hidden>
+          <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+          <div class="cv-info">
+            <div class="cv-name" id="cvName"></div>
+            <div class="cv-size" id="cvSize"></div>
+          </div>
+          <button type="button" class="icon-btn" id="cvRemove" onclick="removeCv()" data-i18n-label="ap.cvRemove"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+        </div>
+        <div class="err-msg" data-i18n="ap.cvReq"></div>
+      </div>
+
+      <div class="field" id="f_notes">
+        <label class="lbl" for="fNotes"><span data-i18n="ap.notes">ملاحظات</span><span class="opt" data-i18n="ap.optional">اختياري</span></label>
+        <textarea class="input" id="fNotes" rows="3" maxlength="1000" data-i18n-ph="ap.notesPh"></textarea>
+      </div>
+    </section>
+
+    <div class="ap-foot">
+      <p class="ap-privacy"><i class="bi bi-shield-check" aria-hidden="true"></i><span data-i18n="ap.privacy"></span></p>
+      <button type="submit" class="btn btn-primary btn-block" id="apSubmit"><span data-i18n="ap.submit">إرسال الطلب</span></button>
+    </div>
+  </form>
+
+  <!-- تم الإرسال -->
+  <section class="ap-card ap-state" id="apDone" hidden>
+    <div class="state-ico ok"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+    <h2 data-i18n="ap.doneTitle">تم استلام طلبك</h2>
+    <p class="muted" id="doneBody"></p>
+    <div class="ref-box" id="refBox">
+      <span data-i18n="ap.ref">رقم الطلب</span>
+      <strong id="refNo"></strong>
+    </div>
+    <p class="small muted" data-i18n="ap.refKeep"></p>
+    <div class="done-actions">
+      <a class="btn btn-primary" id="trackLink" target="_top"><i class="bi bi-search" aria-hidden="true"></i><span data-i18n="ap.track">متابعة طلبك</span></a>
+      <a class="btn btn-ghost" id="againLink" target="_top"><span data-i18n="ap.again">التقديم على وظيفة تانية</span></a>
+    </div>
+  </section>
+
+  <footer class="ap-legal" id="apLegal" dir="ltr"></footer>
+</main>
+
+<script>
+/* ============================================================
+   إعداد الاستضافة الخارجية (GitHub Pages)
+   غيّر API_URL لرابط /exec بتاع الويب أب بتاعك.
+   ============================================================ */
+var API_URL = 'https://script.google.com/macros/s/AKfycbzvU4hv-gZztL8iI_cO3zSvmyEv9F1bZmnxf6mAt6ai2jkVMFNT5c9WupPHtWJGvwEITw/exec';
+
+/* اسم ملف صفحة المتابعة جنب الملف ده */
+var STATUS_PAGE = 'status.html';
+
+var BOOT = {
+  baseUrl: API_URL,
+  page: 'apply',
+  pages: ['apply', 'status'],
+  src: (function () {
+    var m = location.search.match(/[?&]src=([^&]*)/);
+    return m ? decodeURIComponent(m[1]).toLowerCase().replace(/[^a-z0-9_\-]/g, '').slice(0, 40) : '';
+  })(),
+  job: (function () {
+    var m = location.search.match(/[?&]job=([^&]*)/);
+    return m ? decodeURIComponent(m[1]).replace(/[^A-Za-z0-9_\-]/g, '').slice(0, 40) : '';
+  })(),
+  pwdMin: 8,
+  lockMinutes: 10,
+  brand: { name: 'Cairo 3A', logo: '' },
+  apply: {}
+};
+
+/* ------------------------------------------------------------
+   جسر: بنقلّد google.script.run بـ fetch، فكود الصفحة مايتغيرش.
+   Content-Type نص عادي عشان المتصفح مايبعتش preflight
+   (جوجل مابيردّش على طلبات OPTIONS).
+   ------------------------------------------------------------ */
+(function () {
+  function call(action, payload) {
+    return fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: action, payload: payload || {} })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('E_NETWORK');
+      return r.json();
+    });
+  }
+
+  function runner(onOk, onFail) {
+    var api = {
+      withSuccessHandler: function (cb) { return runner(cb, onFail); },
+      withFailureHandler: function (cb) { return runner(onOk, cb); }
+    };
+    ['apply_options', 'apply_submit', 'status_check'].forEach(function (name) {
+      api[name] = function () {
+        var args = [].slice.call(arguments);
+        var payload = name === 'status_check' ? { appId: args[0], mobile: args[1] } : args[0];
+        call(name, payload).then(
+          function (res) { if (onOk) onOk(res); },
+          function (err) { if (onFail) onFail(err); }
+        );
+      };
+    });
+    return api;
+  }
+
+  window.google = { script: { run: runner(null, null) } };
+})();
+</script>
+<script>
+/* ============================================================
+   Client.html · أدوات الواجهة المشتركة
+   يتضمَّن في آخر body بعد سطر تعريف BOOT
+   ============================================================ */
+if (typeof BOOT === 'undefined') window.BOOT = {};
+
+var KEYS = { token: 'HR_TOKEN', user: 'HR_USER', theme: 'HR_THEME', lang: 'HR_LANG' };
+var ME = null;
+var _MEM_ = {};
+
+/* ---------- تخزين محلي (مع بديل في الذاكرة لو اتمنع) ---------- */
+function store(k, v) {
+  try {
+    if (v === undefined) return localStorage.getItem(k);
+    if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, String(v));
+  } catch (e) {
+    if (v === undefined) return Object.prototype.hasOwnProperty.call(_MEM_, k) ? _MEM_[k] : null;
+    if (v === null) delete _MEM_[k]; else _MEM_[k] = String(v);
+  }
+  return null;
+}
+
+function $(id) { return document.getElementById(id); }
+
+/** ٠١٢ و ۰۱۲ → 012 */
+function normDigits(s) {
+  return String(s == null ? '' : s)
+    .replace(/[\u0660-\u0669]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
+    .replace(/[\u06F0-\u06F9]/g, function (c) { return String(c.charCodeAt(0) - 0x06F0); });
+}
+
+/** +20 101 234 5678 · ٠١٠... → 01012345678 (نفس منطق السيرفر) */
+function normMobile(s) {
+  var d = normDigits(s).replace(/\D/g, '');
+  if (d.indexOf('0020') === 0) d = d.slice(4);
+  else if (d.indexOf('20') === 0 && d.length === 12) d = d.slice(2);
+  if (d.length === 10 && d.charAt(0) === '1') d = '0' + d;
+  return d;
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+
+/* ============================================================
+   اللغة
+   ============================================================ */
+var LANG = store(KEYS.lang) === 'en' ? 'en' : 'ar';
+
+var I18N = {
+  ar: {
+    'app.name': 'نظام التوظيف',
+    'app.tagline': 'استقبال طلبات التوظيف، توزيعها على فريق الموارد البشرية، ومتابعة كل مكالمة.',
+    'ui.lang': 'التبديل إلى English',
+    'ui.theme': 'تبديل المظهر',
+    'ui.close': 'إغلاق',
+    'ui.cancel': 'إلغاء',
+    'ui.continue': 'متابعة',
+    'ui.retry': 'إعادة المحاولة',
+    'ui.showPwd': 'إظهار كلمة المرور',
+    'ui.tapContinue': 'لو الصفحة ماتفتحتش لوحدها، اضغط متابعة.',
+    'nav.home': 'الرئيسية',
+    'nav.reports': 'التقارير',
+    'nav.admin': 'الإدارة',
+    'role.ADMIN': 'مسؤول النظام',
+    'role.HR': 'موظف موارد بشرية',
+    'tb.menu': 'قائمة الحساب',
+    'tb.changePwd': 'تغيير كلمة المرور',
+    'tb.logout': 'تسجيل الخروج',
+    'cp.title': 'تغيير كلمة المرور',
+    'cp.cur': 'كلمة المرور الحالية',
+    'cp.new': 'كلمة المرور الجديدة',
+    'cp.conf': 'تأكيد كلمة المرور الجديدة',
+    'cp.hint': '{min} أحرف على الأقل',
+    'cp.curReq': 'اكتب كلمة المرور الحالية',
+    'cp.newReq': 'كلمة المرور لازم تكون {min} أحرف على الأقل',
+    'cp.mismatch': 'التأكيد مش مطابق لكلمة المرور الجديدة',
+    'cp.save': 'حفظ كلمة المرور',
+    'cp.saving': 'جارٍ الحفظ...',
+    'cp.done': 'تم تغيير كلمة المرور، واتقفلت أي جلسة تانية لحسابك.',
+    'auth.expiredTitle': 'انتهت الجلسة',
+    'auth.expiredBody': 'سجّل الدخول مرة تانية عشان تكمل.',
+    'auth.toLogin': 'تسجيل الدخول',
+    'auth.forbiddenTitle': 'الصفحة دي لمسؤول النظام',
+    'auth.forbiddenBody': 'حسابك مايسمحش بفتحها.',
+    'auth.toHome': 'الرجوع للرئيسية',
+    'auth.errorTitle': 'تعذّر تحميل الصفحة',
+    'err.E_BAD_CREDS': 'اسم المستخدم أو كلمة المرور غير صحيحة',
+    'err.E_LOCKED': 'محاولات خاطئة كتير. جرّب تاني بعد {minutes} دقايق.',
+    'err.E_INACTIVE': 'الحساب ده موقوف. كلّم مسؤول النظام.',
+    'err.E_AUTH': 'انتهت الجلسة. سجّل الدخول تاني.',
+    'err.E_FORBIDDEN': 'حسابك مايسمحش بالعملية دي.',
+    'err.E_BUSY': 'النظام بيحفظ طلب تاني دلوقتي. جرّب بعد ثواني.',
+    'err.E_WEAK_PWD': 'كلمة المرور لازم تكون {min} أحرف على الأقل.',
+    'err.E_BAD_OLD_PWD': 'كلمة المرور الحالية غير صحيحة.',
+    'err.E_VALIDATION': 'فيه بيانات ناقصة أو غير صحيحة.',
+    'err.E_EXISTS': 'اسم المستخدم ده مستخدم قبل كده.',
+    'err.E_NOT_FOUND': 'العنصر مش موجود. حدّث الصفحة.',
+    'err.E_SELF': 'مينفعش تشيل صلاحية الأدمن من حسابك أو توقفه.',
+    'err.E_LAST_ADMIN': 'لازم يفضل حساب أدمن واحد نشط على الأقل.',
+    'err.E_CONFIG': 'إعداد النظام ناقص. شغّل hr_setup من المحرر.',
+    'err.E_NETWORK': 'مفيش اتصال بالسيرفر. اتأكد من الإنترنت وجرّب تاني.',
+    'err.E_NO_GAS': 'افتح الصفحة من رابط النظام.',
+    'err.E_NO_FN': 'النسخة المنشورة ناقصة ملفات. انشر نسخة جديدة من Deploy.',
+    'err.E_UNKNOWN': 'حصل خطأ غير متوقع.'
+  },
+  en: {
+    'app.name': 'Recruitment System',
+    'app.tagline': 'Receive job applications, assign them to the HR team, and track every call.',
+    'ui.lang': 'التبديل إلى العربية',
+    'ui.theme': 'Toggle theme',
+    'ui.close': 'Close',
+    'ui.cancel': 'Cancel',
+    'ui.continue': 'Continue',
+    'ui.retry': 'Try again',
+    'ui.showPwd': 'Show password',
+    'ui.tapContinue': "If the page didn't open, tap Continue.",
+    'nav.home': 'Home',
+    'nav.reports': 'Reports',
+    'nav.admin': 'Admin',
+    'role.ADMIN': 'System admin',
+    'role.HR': 'HR staff',
+    'tb.menu': 'Account menu',
+    'tb.changePwd': 'Change password',
+    'tb.logout': 'Sign out',
+    'cp.title': 'Change password',
+    'cp.cur': 'Current password',
+    'cp.new': 'New password',
+    'cp.conf': 'Confirm new password',
+    'cp.hint': 'At least {min} characters',
+    'cp.curReq': 'Enter your current password',
+    'cp.newReq': 'Password must be at least {min} characters',
+    'cp.mismatch': "Confirmation doesn't match the new password",
+    'cp.save': 'Save password',
+    'cp.saving': 'Saving…',
+    'cp.done': 'Password changed. Your other sessions were signed out.',
+    'auth.expiredTitle': 'Session expired',
+    'auth.expiredBody': 'Sign in again to continue.',
+    'auth.toLogin': 'Sign in',
+    'auth.forbiddenTitle': 'This page is for admins',
+    'auth.forbiddenBody': "Your account can't open it.",
+    'auth.toHome': 'Back to home',
+    'auth.errorTitle': "Couldn't load the page",
+    'err.E_BAD_CREDS': 'Wrong username or password',
+    'err.E_LOCKED': 'Too many failed attempts. Try again in {minutes} minutes.',
+    'err.E_INACTIVE': 'This account is disabled. Contact your admin.',
+    'err.E_AUTH': 'Session expired. Sign in again.',
+    'err.E_FORBIDDEN': "Your account can't do this.",
+    'err.E_BUSY': 'The system is saving another request. Try again in a few seconds.',
+    'err.E_WEAK_PWD': 'Password must be at least {min} characters.',
+    'err.E_BAD_OLD_PWD': 'Current password is incorrect.',
+    'err.E_VALIDATION': 'Some data is missing or invalid.',
+    'err.E_EXISTS': 'That username is already taken.',
+    'err.E_NOT_FOUND': 'Item not found. Refresh the page.',
+    'err.E_SELF': "You can't remove admin rights from your own account or disable it.",
+    'err.E_LAST_ADMIN': 'At least one active admin account is required.',
+    'err.E_CONFIG': 'System setup is incomplete. Run hr_setup from the editor.',
+    'err.E_NETWORK': "Can't reach the server. Check your connection and try again.",
+    'err.E_NO_GAS': 'Open this page from the system link.',
+    'err.E_NO_FN': 'The deployed version is missing files. Deploy a new version.',
+    'err.E_UNKNOWN': 'Something went wrong.'
+  }
+};
+
+/** الصفحات تضيف نصوصها: i18nAdd({ar:{...}, en:{...}}) */
+function i18nAdd(extra) {
+  ['ar', 'en'].forEach(function (l) {
+    var src = (extra && extra[l]) || {};
+    Object.keys(src).forEach(function (k) { I18N[l][k] = src[k]; });
+  });
+}
+
+function t(key, vars) {
+  var s = I18N[LANG][key];
+  if (s == null) s = I18N.ar[key];
+  if (s == null) return key;
+  var v = {
+    min: BOOT.pwdMin || 8,
+    minutes: BOOT.lockMinutes || 10,
+    mb: (BOOT.apply && BOOT.apply.cvMaxMb) || 5,
+    company: (BOOT.brand && BOOT.brand.name) || 'Cairo 3A'
+  };
+  if (vars) Object.keys(vars).forEach(function (k) { v[k] = vars[k]; });
+  return String(s).replace(/\{(\w+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; });
+}
+
+/** نص مترجم بمتغيرات — بيتحدّث تلقائيًا لما اللغة تتغير */
+function setI18n(el, key, vars) {
+  if (!el) return;
+  el.setAttribute('data-i18n', key);
+  el._i18nVars = vars || null;
+  el.textContent = t(key, vars);
+}
+
+function applyI18n(root) {
+  var d = document.documentElement;
+  d.setAttribute('lang', LANG);
+  d.setAttribute('dir', LANG === 'en' ? 'ltr' : 'rtl');
+  var scope = root || document;
+  scope.querySelectorAll('[data-i18n]').forEach(function (el) {
+    el.textContent = t(el.getAttribute('data-i18n'), el._i18nVars);
+  });
+  scope.querySelectorAll('[data-i18n-ph]').forEach(function (el) {
+    el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph')));
+  });
+  scope.querySelectorAll('[data-i18n-label]').forEach(function (el) {
+    var s = t(el.getAttribute('data-i18n-label'));
+    el.setAttribute('aria-label', s);
+    el.setAttribute('title', s);
+  });
+  document.querySelectorAll('[data-lang-code]').forEach(function (el) {
+    el.textContent = LANG === 'ar' ? 'EN' : 'ع';
+  });
+}
+
+function toggleLang() {
+  LANG = LANG === 'ar' ? 'en' : 'ar';
+  store(KEYS.lang, LANG);
+  applyI18n();
+  if (typeof onLangChange === 'function') onLangChange();
+}
+
+/* ============================================================
+   الثيم
+   ============================================================ */
+function currentTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+}
+function syncThemeIcons() {
+  var dark = currentTheme() === 'dark';
+  document.querySelectorAll('[data-theme-icon]').forEach(function (i) {
+    i.className = dark ? 'bi bi-sun' : 'bi bi-moon-stars';
+  });
+}
+function toggleTheme() {
+  var th = currentTheme() === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', th);
+  store(KEYS.theme, th);
+  syncThemeIcons();
+}
+
+/* ============================================================
+   استدعاء السيرفر
+   run('fn', a, b).then(res).catch(handleErr)
+   - أي {ok:false, code} من السيرفر بيتحول rejection بنفس الكود
+   ============================================================ */
+function run(fn) {
+  var args = [].slice.call(arguments, 1);
+  return new Promise(function (resolve, reject) {
+    if (!window.google || !google.script || !google.script.run) {
+      var e = new Error('E_NO_GAS'); e.code = 'E_NO_GAS'; reject(e); return;
+    }
+    var runner = google.script.run
+      .withSuccessHandler(function (res) {
+        if (res && res.ok === false) {
+          var err = new Error(res.code || 'E_UNKNOWN');
+          err.code = res.code || 'E_UNKNOWN';
+          err.data = res;
+          reject(err);
+        } else {
+          resolve(res);
+        }
+      })
+      .withFailureHandler(function (err) { reject(err); });
+    if (typeof runner[fn] !== 'function') {
+      var nf = new Error('E_NO_FN: ' + fn); nf.code = 'E_NO_FN'; reject(nf); return;
+    }
+    runner[fn].apply(null, args);
+  });
+}
+
+function errCode(err) {
+  if (err && err.code) return err.code;
+  var m = String((err && err.message) || err || '');
+  var c = m.match(/\bE_[A-Z_]+\b/);
+  if (c) return c[0];
+  if (/NetworkError|HTTP 0|Failed to fetch|connection/i.test(m)) return 'E_NETWORK';
+  return '';
+}
+
+function errText(err) {
+  var c = errCode(err);
+  if (c && I18N.ar['err.' + c] != null) return t('err.' + c, err && err.data);
+  var m = String((err && err.message) || err || '').replace(/^(Error|Exception):\s*/, '');
+  return m || t('err.E_UNKNOWN');
+}
+
+/** المعالج العام: الجلسة المنتهية تحجب الصفحة، وغير كده تنبيه */
+function handleErr(err) {
+  if (window.console) console.error(err);
+  if (errCode(err) === 'E_AUTH') { sessionExpired(); return; }
+  toast(errText(err), 'error');
+}
+
+/* ============================================================
+   واجهة عامة
+   ============================================================ */
+function toast(msg, type) {
+  type = type || 'info';
+  var icons = {
+    success: 'bi-check-circle-fill', error: 'bi-exclamation-octagon-fill',
+    warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill'
+  };
+  var box = $('toastBox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'toastBox';
+    box.setAttribute('role', 'status');
+    box.setAttribute('aria-live', 'polite');
+    document.body.appendChild(box);
+  }
+  var el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.innerHTML = '<i class="bi ' + icons[type] + '" aria-hidden="true"></i><span></span>';
+  el.querySelector('span').textContent = msg;
+  box.appendChild(el);
+  setTimeout(function () {
+    el.classList.add('hide');
+    setTimeout(function () { el.remove(); }, 320);
+  }, type === 'error' ? 5200 : 3400);
+}
+
+/**
+ * يعلّم الحقل كناقص.
+ * key اختياري لنص خطأ مختلف؛ من غيره بيرجع النص الأصلي للحقل
+ */
+function mark(id, on, key) {
+  var f = $(id);
+  if (!f) return;
+  f.classList.toggle('invalid', !!on);
+  var inp = f.querySelector('input:not([type=file]),select,textarea');
+  if (inp) { if (on) inp.setAttribute('aria-invalid', 'true'); else inp.removeAttribute('aria-invalid'); }
+  var m = f.querySelector('.err-msg');
+  if (m) {
+    if (m._defKey === undefined) m._defKey = m.getAttribute('data-i18n') || '';
+    var k = key || m._defKey;
+    if (k) setI18n(m, k);
+  }
+}
+
+/** زرار مشغول: يغيّر النص المترجم ويقفل الزرار */
+function setBusy(btn, on, key) {
+  if (!btn) return;
+  var lbl = btn.querySelector('[data-i18n]') || btn;
+  if (on) {
+    if (!btn._label) btn._label = lbl.getAttribute('data-i18n');
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    if (key) setI18n(lbl, key);
+  } else {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    if (btn._label) setI18n(lbl, btn._label);
+  }
+}
+
+function toggleReveal(btn) {
+  var inp = btn.parentNode.querySelector('input');
+  var show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+  btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+}
+
+function hidePreload() { var p = $('preload'); if (p) p.hidden = true; }
+
+function applyBrand() {
+  var b = BOOT.brand || {};
+  document.querySelectorAll('[data-brand-logo]').forEach(function (box) {
+    box.innerHTML = '';
+    if (b.logo) {
+      var img = new Image();
+      img.alt = b.name || '';
+      img.src = b.logo;
+      box.appendChild(img);
+    } else {
+      box.innerHTML = '<i class="bi bi-people-fill" aria-hidden="true"></i>';
+    }
+  });
+}
+
+function initials(u) {
+  var n = String((u && (u.fullName || u.username)) || '?').trim().split(/\s+/);
+  return (n[0].charAt(0) + (n[1] ? n[1].charAt(0) : '')).toUpperCase();
+}
+
+/* ---------- النوافذ ---------- */
+function openModal(id) {
+  var m = $(id);
+  if (!m) return;
+  m._opener = document.activeElement;
+  m.classList.add('open');
+  var f = m.querySelector('input:not([hidden]),select,textarea');
+  if (f) setTimeout(function () { f.focus(); }, 40);
+}
+function closeModal(id) {
+  var m = $(id);
+  if (!m || !m.classList.contains('open')) return;
+  m.classList.remove('open');
+  if (m._opener && m._opener.focus) m._opener.focus();
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(function (m) { closeModal(m.id); });
+});
+document.addEventListener('click', function (e) {
+  if (e.target.classList && e.target.classList.contains('modal')) closeModal(e.target.id);
+});
+
+/* ============================================================
+   التنقل
+   صفحات GAS بتتعرض جوه iframe، والتنقل من الكود ممكن يتمنع من
+   غير ضغطة من المستخدم. عشان كده:
+   - كل الروابط <a target="_top"> حقيقية
+   - go() بتحاول، ولو الصفحة مااتقفلتش يظهر زرار متابعة
+   ============================================================ */
+function pageUrl(page, params) {
+  var url = (BOOT.baseUrl || '') + '?page=' + encodeURIComponent(page);
+  if (params) Object.keys(params).forEach(function (k) {
+    url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  });
+  return url;
+}
+
+function bindPageLinks(root) {
+  (root || document).querySelectorAll('a[data-page]').forEach(function (a) {
+    a.href = pageUrl(a.getAttribute('data-page'));
+    a.target = '_top';
+  });
+}
+
+function go(page) {
+  var url = pageUrl(page);
+  try { window.top.location.href = url; } catch (e) { /* ممنوع — الزرار هيظهر */ }
+  setTimeout(function () { showContinue(url); }, 2500);
+}
+
+function showContinue(url) {
+  var bar = $('continueBar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'continueBar';
+    bar.className = 'continue-bar';
+    bar.innerHTML = '<span data-i18n="ui.tapContinue"></span>' +
+                    '<a class="btn btn-primary" target="_top" data-i18n="ui.continue"></a>';
+    document.body.appendChild(bar);
+  }
+  bar.querySelector('a').href = url;
+  applyI18n(bar);
+}
+
+/* ============================================================
+   الجلسة
+   ============================================================ */
+function getToken() { return store(KEYS.token) || ''; }
+
+function saveSession(res) {
+  store(KEYS.token, res.token);
+  store(KEYS.user, JSON.stringify(res.user));
+  ME = res.user;
+}
+
+function clearSession() {
+  store(KEYS.token, null);
+  store(KEYS.user, null);
+  ME = null;
+}
+
+/**
+ * أول سطر في أي صفحة محمية:
+ * requireAuth(['ADMIN','HR']).then(function(me){ ... }).catch(function(){});
+ */
+function requireAuth(roles) {
+  var tok = getToken();
+  if (!tok) {
+    sessionExpired();
+    return Promise.reject(new Error('E_AUTH'));
+  }
+  return run('auth_me', tok).then(function (u) {
+    ME = u;
+    store(KEYS.user, JSON.stringify(u));
+    if (roles && roles.indexOf(u.role) < 0) {
+      showBlocker('forbidden');
+      throw new Error('E_FORBIDDEN');
+    }
+    return u;
+  }, function (err) {
+    if (errCode(err) === 'E_AUTH') sessionExpired();
+    else showBlocker('error', errText(err));
+    throw err;
+  });
+}
+
+function sessionExpired() {
+  clearSession();
+  showBlocker('expired');
+}
+
+function showBlocker(kind, text) {
+  hidePreload();
+  var cfg = {
+    expired:   { icon: 'bi-lock',        title: 'auth.expiredTitle',   body: 'auth.expiredBody',   btn: 'auth.toLogin', page: 'login' },
+    forbidden: { icon: 'bi-shield-lock', title: 'auth.forbiddenTitle', body: 'auth.forbiddenBody', btn: 'auth.toHome',  page: 'home' },
+    error:     { icon: 'bi-wifi-off',    title: 'auth.errorTitle',     body: '',                   btn: 'ui.retry',     page: BOOT.page || 'login' }
+  }[kind];
+
+  var el = $('blocker');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'blocker';
+    el.className = 'blocker';
+    document.body.appendChild(el);
+  }
+  el.innerHTML =
+    '<div class="blocker-card" role="alertdialog" aria-modal="true" aria-labelledby="blkTitle">' +
+      '<div class="blocker-ico"><i class="bi ' + cfg.icon + '" aria-hidden="true"></i></div>' +
+      '<h2 id="blkTitle" data-i18n="' + cfg.title + '"></h2>' +
+      '<p class="muted blk-text"' + (cfg.body ? ' data-i18n="' + cfg.body + '"' : '') + '></p>' +
+      '<a class="btn btn-primary btn-block" data-page="' + cfg.page + '" data-i18n="' + cfg.btn + '"></a>' +
+    '</div>';
+  if (!cfg.body) el.querySelector('.blk-text').textContent = text || '';
+  bindPageLinks(el);
+  applyI18n(el);
+  el.hidden = false;
+}
+
+function logout() {
+  var tok = getToken();
+  clearSession();
+  var done = function () { go('login'); };
+  run('auth_logout', tok).then(done, done);
+}
+
+/* ---------- تهيئة عامة ---------- */
+applyI18n();
+syncThemeIcons();
+applyBrand();
+bindPageLinks();
+</script>
+
+<script>
+i18nAdd({
+  ar: {
+    'ap.title': 'التقديم على وظيفة',
+    'ap.intro': 'املأ بياناتك، وفريق الموارد البشرية هيتواصل معاك بالتليفون.',
+    'ap.secJob': 'الوظيفة',
+    'ap.job': 'الوظيفة المطلوبة',
+    'ap.jobPh': 'اختار الوظيفة',
+    'ap.jobReq': 'اختار الوظيفة اللي بتقدّم عليها',
+    'ap.secYou': 'بياناتك',
+    'ap.name': 'الاسم بالكامل',
+    'ap.namePh': 'مثال: محمد أحمد علي',
+    'ap.nameReq': 'اكتب اسمك: اسمين على الأقل، من غير أرقام',
+    'ap.mobile': 'رقم الموبايل',
+    'ap.mobileReq': 'اكتب رقم موبايل مصري من 11 رقم يبدأ بـ 01',
+    'ap.email': 'البريد الإلكتروني',
+    'ap.emailReq': 'صيغة البريد الإلكتروني غير صحيحة',
+    'ap.birth': 'تاريخ الميلاد',
+    'ap.birthHint': 'السن المسموح من {min} لـ {max} سنة',
+    'ap.birthReq': 'اختار تاريخ ميلاد صحيح',
+    'ap.age': 'سنك {n} سنة',
+    'ap.ageJob': 'الوظيفة دي للأعمار من {min} لـ {max} سنة',
+    'err.E_AGE': 'السن المسموح من {min} لـ {max} سنة.',
+    'err.E_AGE_JOB': 'الوظيفة دي للأعمار من {min} لـ {max} سنة، وسنك {age}.',
+    'ap.gov': 'المحافظة',
+    'ap.govPh': 'اختار المحافظة',
+    'ap.govReq': 'اختار المحافظة',
+    'ap.edu': 'المؤهل',
+    'ap.eduPh': 'اختار المؤهل',
+    'ap.eduReq': 'اختار المؤهل',
+    'ap.yrs': 'سنوات الخبرة',
+    'ap.yrsHint': 'اكتب 0 لو مفيش خبرة',
+    'ap.yrsReq': 'اكتب رقم من 0 لـ 50',
+    'ap.secCv': 'السيرة الذاتية',
+    'ap.optional': 'اختياري',
+    'ap.cvPick': 'اختار ملف السيرة الذاتية',
+    'ap.cvHint': 'PDF أو Word أو صورة، بحد أقصى {mb} ميجا',
+    'ap.cvReq': 'ارفع السيرة الذاتية',
+    'ap.cvReading': 'جارٍ تجهيز الملف...',
+    'ap.cvRemove': 'إزالة الملف',
+    'ap.cvWait': 'استنى لحد ما الملف يتجهز',
+    'ap.notes': 'ملاحظات',
+    'ap.notesPh': 'أي حاجة تحب نعرفها: خبرات سابقة، شهادات، أنسب وقت للاتصال',
+    'ap.privacy': 'بياناتك بتُستخدم لأغراض التوظيف في {company} فقط.',
+    'ap.submit': 'إرسال الطلب',
+    'ap.sending': 'جارٍ الإرسال...',
+    'ap.uploading': 'جارٍ رفع السيرة الذاتية...',
+    'ap.fix': 'راجع الحقول المعلّمة بالأحمر',
+    'ap.doneTitle': 'تم استلام طلبك',
+    'ap.doneBody': 'هنراجع طلبك ونتواصل معاك على رقم {mobile}.',
+    'ap.ref': 'رقم الطلب',
+    'ap.refKeep': 'احتفظ بالرقم ده — هتحتاجه عشان تتابع طلبك.',
+    'ap.again': 'التقديم على وظيفة تانية',
+    'ap.track': 'متابعة طلبك',
+    'ap.trackHint': 'تقدر تتابع طلبك في أي وقت برقم الطلب ورقم موبايلك.',
+    'ap.closedTitle': 'مفيش وظائف متاحة دلوقتي',
+    'ap.closedBody': 'ارجع للرابط ده لما {company} تعلن عن وظائف جديدة.',
+    'ap.errorTitle': 'صفحة التقديم مش جاهزة',
+    'ap.errorBody': 'جرّب تاني بعد شوية.',
+    'err.E_DUPLICATE': 'قدّمت على الوظيفة دي قبل كده بنفس رقم الموبايل.',
+    'err.E_JOB_CLOSED': 'الوظيفة دي اتقفلت. اختار وظيفة تانية.',
+    'err.E_CV_TYPE': 'نوع الملف مش مدعوم. ارفع PDF أو Word أو صورة.',
+    'err.E_CV_SIZE': 'الملف أكبر من {mb} ميجا.'
+  },
+  en: {
+    'ap.title': 'Apply for a job',
+    'ap.intro': 'Fill in your details and our HR team will call you.',
+    'ap.secJob': 'Position',
+    'ap.job': 'Position you are applying for',
+    'ap.jobPh': 'Choose a position',
+    'ap.jobReq': 'Choose the position you are applying for',
+    'ap.secYou': 'Your details',
+    'ap.name': 'Full name',
+    'ap.namePh': 'e.g. Mohamed Ahmed Ali',
+    'ap.nameReq': 'Enter your name: at least two words, no numbers',
+    'ap.mobile': 'Mobile number',
+    'ap.mobileReq': 'Enter an 11-digit Egyptian mobile number starting with 01',
+    'ap.email': 'Email',
+    'ap.emailReq': "This email address isn't valid",
+    'ap.birth': 'Date of birth',
+    'ap.birthHint': 'Allowed age is {min} to {max}',
+    'ap.birthReq': 'Choose a valid date of birth',
+    'ap.age': 'You are {n} years old',
+    'ap.ageJob': 'This position is for ages {min} to {max}',
+    'err.E_AGE': 'Allowed age is {min} to {max}.',
+    'err.E_AGE_JOB': 'This position is for ages {min} to {max}; you are {age}.',
+    'ap.gov': 'Governorate',
+    'ap.govPh': 'Choose governorate',
+    'ap.govReq': 'Choose your governorate',
+    'ap.edu': 'Education',
+    'ap.eduPh': 'Choose education level',
+    'ap.eduReq': 'Choose your education level',
+    'ap.yrs': 'Years of experience',
+    'ap.yrsHint': 'Enter 0 if you have none',
+    'ap.yrsReq': 'Enter a number from 0 to 50',
+    'ap.secCv': 'CV',
+    'ap.optional': 'optional',
+    'ap.cvPick': 'Choose your CV file',
+    'ap.cvHint': 'PDF, Word or photo, up to {mb} MB',
+    'ap.cvReq': 'Upload your CV',
+    'ap.cvReading': 'Preparing file…',
+    'ap.cvRemove': 'Remove file',
+    'ap.cvWait': 'Wait until the file is ready',
+    'ap.notes': 'Notes',
+    'ap.notesPh': 'Anything we should know: past experience, certificates, best time to call',
+    'ap.privacy': 'Your details are used only for recruitment at {company}.',
+    'ap.submit': 'Submit application',
+    'ap.sending': 'Sending…',
+    'ap.uploading': 'Uploading your CV…',
+    'ap.fix': 'Check the fields marked in red',
+    'ap.doneTitle': 'Application received',
+    'ap.doneBody': "We'll review it and contact you on {mobile}.",
+    'ap.ref': 'Application number',
+    'ap.refKeep': 'Keep this number — you will need it to track your application.',
+    'ap.again': 'Apply for another position',
+    'ap.track': 'Track your application',
+    'ap.trackHint': 'You can track your application any time with this number and your mobile.',
+    'ap.closedTitle': 'No open positions right now',
+    'ap.closedBody': 'Come back to this link when {company} announces new positions.',
+    'ap.errorTitle': "The application page isn't ready",
+    'ap.errorBody': 'Please try again later.',
+    'err.E_DUPLICATE': 'You already applied for this position with this mobile number.',
+    'err.E_JOB_CLOSED': 'This position just closed. Choose another one.',
+    'err.E_CV_TYPE': 'File type not supported. Upload a PDF, Word file or photo.',
+    'err.E_CV_SIZE': 'The file is larger than {mb} MB.'
+  }
+});
+
+var OPT = {};
+var CV = null;          // {name, size, b64}
+var CV_BUSY = false;
+var STARTED = Date.now();
+var SUB_ID = randHex(16);
+var LAST = null;        // آخر بيانات اتبعتت (لشاشة النجاح)
+
+/* حقول السيرفر ← عناصر الصفحة */
+var FIELD = {
+  job: 'f_job', fullName: 'f_name', mobile: 'f_mobile', email: 'f_email',
+  birthDate: 'f_birth', governorate: 'f_gov', education: 'f_edu', yearsExp: 'f_yrs', cv: 'f_cv'
+};
+
+/** السن من تاريخ الميلاد — نفس حساب السيرفر */
+function ageFrom(v) {
+  var m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return '';
+  var b = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  if (isNaN(b.getTime()) || b.getDate() !== Number(m[3])) return '';
+  var now = new Date();
+  var age = now.getFullYear() - b.getFullYear();
+  var mm = now.getMonth() - b.getMonth();
+  if (mm < 0 || (mm === 0 && now.getDate() < b.getDate())) age--;
+  return (age >= 0 && age < 120) ? age : '';
+}
+
+function jobAgeRange() {
+  var j = jobById($('fJob').value);
+  return {
+    min: (j && j.minAge !== '' && j.minAge != null) ? j.minAge : (OPT.minAge || 16),
+    max: (j && j.maxAge !== '' && j.maxAge != null) ? j.maxAge : (OPT.maxAge || 65)
+  };
+}
+
+/** يعرض السن تحت الحقل، وبيقول لو برّه شرط الوظيفة قبل الإرسال */
+function updateAge() {
+  var hint = $('ageHint');
+  var age = ageFrom($('fBirth').value);
+  var rng = jobAgeRange();
+  if (age === '') {
+    hint.className = 'hint';
+    setI18n(hint, 'ap.birthHint', { min: rng.min, max: rng.max });
+    return;
+  }
+  var ok = age >= rng.min && age <= rng.max;
+  hint.className = 'hint ' + (ok ? 'age-ok' : 'age-bad');
+  hint.textContent = t('ap.age', { n: age }) + (ok ? '' : ' — ' + t('ap.ageJob', { min: rng.min, max: rng.max }));
+}
+
+applyI18n();
+
+function initApply() {
+  var company = (BOOT.brand && BOOT.brand.name) || 'Cairo 3A';
+  $('apCompany').textContent = company;
+  $('apLegal').textContent = '© ' + new Date().getFullYear() + ' ' + company;
+
+  if (OPT.error) return showClosed('ap.errorTitle', 'ap.errorBody');
+  if (!OPT.jobs || !OPT.jobs.length) return showClosed('ap.closedTitle', 'ap.closedBody');
+
+  buildSelects();
+  var pre = BOOT.job && jobById(BOOT.job) ? BOOT.job : (OPT.jobs.length === 1 ? OPT.jobs[0].id : '');
+  if (pre) $('fJob').value = pre;
+  updateJobMeta();
+
+  $('cvOpt').hidden = !!OPT.cvRequired;
+
+  /* أي تعديل يشيل علامة الخطأ */
+  [['fJob', 'f_job'], ['fName', 'f_name'], ['fMobile', 'f_mobile'], ['fEmail', 'f_email'],
+   ['fGov', 'f_gov'], ['fEdu', 'f_edu'], ['fYrs', 'f_yrs'], ['fBirth', 'f_birth']].forEach(function (x) {
+    var ev = $(x[0]).tagName === 'SELECT' ? 'change' : 'input';
+    $(x[0]).addEventListener(ev, function () { mark(x[1], false); });
+  });
+  $('fJob').addEventListener('change', function () { updateJobMeta(); updateAge(); });
+  $('fBirth').addEventListener('input', function () { mark('f_birth', false); updateAge(); });
+  var today = new Date();
+  var iso = function (d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+  $('fBirth').max = iso(new Date(today.getFullYear() - (OPT.minAge || 16), today.getMonth(), today.getDate()));
+  $('fBirth').min = iso(new Date(today.getFullYear() - (OPT.maxAge || 65) - 1, today.getMonth(), today.getDate() + 1));
+  updateAge();
+
+  var drop = $('cvDrop');
+  ['dragenter', 'dragover'].forEach(function (n) {
+    drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.add('drag'); });
+  });
+  ['dragleave', 'drop'].forEach(function (n) {
+    drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.remove('drag'); });
+  });
+  drop.addEventListener('drop', function (e) {
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) prepareCv(f);
+  });
+
+  $('apForm').hidden = false;
+}
+
+function onLangChange() {
+  if (!OPT.jobs || !OPT.jobs.length) return;
+  buildSelects();
+  if (CV) $('cvSize').textContent = fmtSize(CV.size);
+  if (LAST) fillDone(LAST.ref, LAST.mobile);
+}
+
+function showClosed(titleKey, bodyKey) {
+  setI18n($('closedTitle'), titleKey);
+  setI18n($('closedBody'), bodyKey);
+  $('apClosed').hidden = false;
+}
+
+/* ---------- القوائم ---------- */
+function jobById(id) {
+  for (var i = 0; i < (OPT.jobs || []).length; i++) if (OPT.jobs[i].id === id) return OPT.jobs[i];
+  return null;
+}
+
+function fillSelect(sel, items, phKey) {
+  var cur = sel.value;
+  sel.innerHTML = '';
+  var ph = document.createElement('option');
+  ph.value = '';
+  ph.disabled = true;
+  ph.textContent = t(phKey);
+  sel.appendChild(ph);
+  items.forEach(function (it) {
+    var o = document.createElement('option');
+    o.value = it[0];
+    o.textContent = it[1];
+    sel.appendChild(o);
+  });
+  sel.value = cur;
+  if (sel.value !== cur || !cur) { sel.value = ''; ph.selected = true; }
+}
+
+function buildSelects() {
+  var en = LANG === 'en';
+  fillSelect($('fJob'), OPT.jobs.map(function (j) { return [j.id, j.title]; }), 'ap.jobPh');
+  fillSelect($('fGov'), OPT.governorates.map(function (g) { return [g[0], en ? g[1] : g[0]]; }), 'ap.govPh');
+  fillSelect($('fEdu'), OPT.education.map(function (e) { return [e[0], en ? e[1] : e[0]]; }), 'ap.eduPh');
+}
+
+function updateJobMeta() {
+  var box = $('jobMeta');
+  box.innerHTML = '';
+  var j = jobById($('fJob').value);
+  if (!j) return;
+  var ageTxt = '';
+  if ((j.minAge !== '' && j.minAge != null) || (j.maxAge !== '' && j.maxAge != null)) {
+    var rng = jobAgeRange();
+    ageTxt = t('ap.ageJob', { min: rng.min, max: rng.max });
+  }
+  [['bi-diagram-3', j.department], ['bi-geo-alt', j.location], ['bi-person-badge', ageTxt]].forEach(function (x) {
+    if (!x[1]) return;
+    var s = document.createElement('span');
+    s.className = 'badge';
+    s.innerHTML = '<i class="bi ' + x[0] + '" aria-hidden="true"></i>';
+    s.appendChild(document.createTextNode(x[1]));
+    box.appendChild(s);
+  });
+}
+
+/* ---------- السيرة الذاتية ---------- */
+function pickCv(input) {
+  var f = input.files && input.files[0];
+  input.value = '';
+  if (f) prepareCv(f);
+}
+
+function prepareCv(file) {
+  mark('f_cv', false);
+  var ext = String(file.name || '').toLowerCase().split('.').pop();
+  var isImg = /^image\//.test(file.type || '') || ['jpg', 'jpeg', 'png', 'webp', 'heic'].indexOf(ext) >= 0;
+  var max = (OPT.cvMaxMb || 5) * 1048576;
+
+  if (!isImg && (OPT.cvExt || []).indexOf(ext) < 0) return cvError('err.E_CV_TYPE');
+  if (!isImg && file.size > max) return cvError('err.E_CV_SIZE');
+  if (isImg && file.size > 25 * 1048576) return cvError('err.E_CV_SIZE');
+
+  CV = null;
+  CV_BUSY = true;
+  showCvFile(file.name, t('ap.cvReading'));
+
+  var done = function (b64, name) {
+    CV_BUSY = false;
+    var size = Math.floor(b64.length * 3 / 4);
+    if (size > max) return cvError('err.E_CV_SIZE');
+    CV = { name: name, size: size, b64: b64 };
+    showCvFile(name, fmtSize(size));
+  };
+  var raw = function () { fileB64(file, function (b64) { done(b64, file.name); }); };
+
+  if (isImg) {
+    var base = String(file.name || 'cv').replace(/\.[^.]+$/, '') || 'cv';
+    compressImage(file, function (b64) { done(b64, base + '.jpg'); }, raw);
+  } else {
+    raw();
+  }
+}
+
+function cvError(key) {
+  CV = null;
+  CV_BUSY = false;
+  $('cvFile').hidden = true;
+  $('cvDrop').hidden = false;
+  mark('f_cv', true, key);
+}
+
+function showCvFile(name, sizeText) {
+  $('cvName').textContent = name;
+  $('cvSize').textContent = sizeText;
+  $('cvDrop').hidden = true;
+  $('cvFile').hidden = false;
+}
+
+function removeCv() {
+  CV = null;
+  CV_BUSY = false;
+  $('cvFile').hidden = true;
+  $('cvDrop').hidden = false;
+  mark('f_cv', false);
+  $('fCv').focus();
+}
+
+function fmtSize(b) {
+  return b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+}
+
+function fileB64(file, cb) {
+  var r = new FileReader();
+  r.onload = function (e) { cb(String(e.target.result).split(',')[1] || ''); };
+  r.onerror = function () { cvError('err.E_CV_TYPE'); };
+  r.readAsDataURL(file);
+}
+
+/** صور الموبايل: تصغير لـ 1800px و JPEG — صورة 4 ميجا بتبقى حوالي 400KB */
+function compressImage(file, ok, fail) {
+  var r = new FileReader();
+  r.onerror = fail;
+  r.onload = function (e) {
+    var img = new Image();
+    img.onerror = fail;
+    img.onload = function () {
+      try {
+        var max = 1800, w = img.naturalWidth, h = img.naturalHeight;
+        if (!w || !h) return fail();
+        if (w > max || h > max) {
+          if (w > h) { h = Math.round(h * max / w); w = max; } else { w = Math.round(w * max / h); h = max; }
+        }
+        var cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        var ctx = cv.getContext('2d');
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        ok(cv.toDataURL('image/jpeg', 0.8).split(',')[1]);
+      } catch (err) { fail(); }
+    };
+    img.src = e.target.result;
+  };
+  r.readAsDataURL(file);
+}
+
+/* ---------- الإرسال ---------- */
+function randHex(n) {
+  var a = new Uint8Array(n);
+  (window.crypto || window.msCrypto).getRandomValues(a);
+  return Array.prototype.map.call(a, function (b) { return (b < 16 ? '0' : '') + b.toString(16); }).join('');
+}
+
+function collect() {
+  return {
+    jobId: $('fJob').value,
+    fullName: $('fName').value.trim().replace(/\s+/g, ' '),
+    birthDate: $('fBirth').value,
+    mobile: normMobile($('fMobile').value),
+    email: $('fEmail').value.trim(),
+    governorate: $('fGov').value,
+    education: $('fEdu').value,
+    yearsExp: normDigits($('fYrs').value).trim(),
+    notes: $('fNotes').value.trim()
+  };
+}
+
+function validateForm(d) {
+  var bad = [];
+  if (!d.jobId) bad.push('f_job');
+  var age = ageFrom(d.birthDate);
+  var rng = jobAgeRange();
+  if (age === '' || age < rng.min || age > rng.max) bad.push('f_birth');
+  if (d.fullName.length < 5 || d.fullName.split(' ').length < 2 || /\d/.test(normDigits(d.fullName))) bad.push('f_name');
+  if (!/^01[0125]\d{8}$/.test(d.mobile)) bad.push('f_mobile');
+  if (d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email)) bad.push('f_email');
+  if (!d.governorate) bad.push('f_gov');
+  if (!d.education) bad.push('f_edu');
+  if (!/^\d{1,2}$/.test(d.yearsExp) || Number(d.yearsExp) > 50) bad.push('f_yrs');
+  if (OPT.cvRequired && !CV) bad.push('f_cv');
+  return bad;
+}
+
+function focusField(id) {
+  var f = $(id);
+  if (!f) return;
+  f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  var inp = f.querySelector('input:not(.sr-only),select,textarea') || f.querySelector('input');
+  if (inp) setTimeout(function () { try { inp.focus({ preventScroll: true }); } catch (e) { inp.focus(); } }, 350);
+}
+
+function submitApplication(ev) {
+  if (ev) ev.preventDefault();
+  if (CV_BUSY) { toast(t('ap.cvWait'), 'warning'); return false; }
+
+  var d = collect();
+  var bad = validateForm(d);
+  ['f_job', 'f_name', 'f_mobile', 'f_email', 'f_gov', 'f_edu', 'f_yrs', 'f_cv'].forEach(function (id) {
+    mark(id, bad.indexOf(id) >= 0);
+  });
+  if (bad.length) {
+    var myAge = ageFrom(d.birthDate);
+    if (bad.indexOf('f_birth') >= 0 && myAge !== '') {
+      var range = jobAgeRange();
+      mark('f_birth', true, 'err.E_AGE_JOB');
+      var em = $('f_birth').querySelector('.err-msg');
+      if (em) em.textContent = t('err.E_AGE_JOB', { min: range.min, max: range.max, age: myAge });
+    }
+    toast(t('ap.fix'), 'warning');
+    focusField(bad[0]);
+    return false;
+  }
+
+  var btn = $('apSubmit');
+  setBusy(btn, true, CV ? 'ap.uploading' : 'ap.sending');
+
+  var payload = {
+    submissionId: SUB_ID,
+    elapsedMs: Date.now() - STARTED,
+    website: $('website').value,
+    source: BOOT.src || '',
+    jobId: d.jobId,
+    fullName: d.fullName,
+    mobile: d.mobile,
+    email: d.email,
+    birthDate: d.birthDate,
+    governorate: d.governorate,
+    education: d.education,
+    yearsExp: d.yearsExp,
+    notes: d.notes,
+    cvBase64: CV ? CV.b64 : '',
+    cvName: CV ? CV.name : ''
+  };
+
+  run('apply_submit', payload)
+    .then(function (res) {
+      LAST = { ref: res.ref || '', mobile: d.mobile };
+      fillDone(LAST.ref, LAST.mobile);
+      $('apForm').hidden = true;
+      $('apDone').hidden = false;
+      window.scrollTo(0, 0);
+    })
+    .catch(function (err) {
+      setBusy(btn, false);
+      var code = errCode(err);
+      var field = err && err.data && err.data.field;
+
+      if (code === 'E_JOB_CLOSED') {
+        OPT.jobs = OPT.jobs.filter(function (j) { return j.id !== d.jobId; });
+        $('fJob').value = '';
+        if (!OPT.jobs.length) { $('apForm').hidden = true; return showClosed('ap.closedTitle', 'ap.closedBody'); }
+        buildSelects();
+        updateJobMeta();
+      }
+      if (field && FIELD[field]) {
+        var key = (code && code !== 'E_VALIDATION') ? 'err.' + code : '';
+        mark(FIELD[field], true, key);
+        if (key && err.data) {
+          var m = $(FIELD[field]).querySelector('.err-msg');
+          if (m) m.textContent = t(key, err.data);
+        }
+        focusField(FIELD[field]);
+      }
+      if (code === 'E_VALIDATION') toast(t('ap.fix'), 'warning');
+      else if (code === 'E_DUPLICATE') toast(errText(err), 'warning');
+      else toast(errText(err), 'error');
+    });
+  return false;
+}
+
+function fillDone(ref, mobile) {
+  setI18n($('doneBody'), 'ap.doneBody', { mobile: mobile });
+  $('refNo').textContent = ref || '—';
+  $('refBox').hidden = !ref;
+  $('againLink').href = location.pathname + (BOOT.src ? '?src=' + encodeURIComponent(BOOT.src) : '');
+  var track = $('trackLink');
+  track.hidden = !ref;
+  /* صفحة المتابعة الثابتة جنب الملف ده على نفس الموقع */
+  if (ref) track.href = STATUS_PAGE + '?ref=' + encodeURIComponent(ref);
+}
+/* ============================================================
+   بداية التشغيل: بنجيب الوظائف والإعدادات من السيرفر
+   ============================================================ */
+(function start() {
+  if (/PASTE_YOUR/.test(API_URL)) {
+    showClosed('ap.errorTitle', 'ap.errorBody');
+    console.error('API_URL لسه مش متظبط في أول الملف.');
+    return;
+  }
+  run('apply_options')
+    .then(function (res) {
+      var b = (res && res.boot) || {};
+      if (b.brand) BOOT.brand = b.brand;
+      if (b.pwdMin) BOOT.pwdMin = b.pwdMin;
+      OPT = b.apply || {};
+      BOOT.apply = OPT;
+      applyBrand();
+      initApply();
+    })
+    .catch(function (err) {
+      if (window.console) console.error(err);
+      showClosed('ap.errorTitle', 'ap.errorBody');
+    });
+})();
+
+</script>
+</body>
+</html>

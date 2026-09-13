@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<script>
+/* يطبّق الثيم واللغة قبل الرسم — يمنع الوميض */
+(function () {
+  try {
+    var th = localStorage.getItem('HR_THEME');
+    if (th !== 'dark' && th !== 'light') {
+      th = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    var lg = localStorage.getItem('HR_LANG') === 'en' ? 'en' : 'ar';
+    var d = document.documentElement;
+    d.setAttribute('data-theme', th);
+    d.setAttribute('lang', lg);
+    d.setAttribute('dir', lg === 'en' ? 'ltr' : 'rtl');
+  } catch (e) {}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+/* ============================================================
+   Styles.html · الألوان كلها متغيرات — ممنوع ألوان ثابتة في style مضمّن
+   ============================================================ */
+:root{
+  --brand:#C4151C; --brand-dark:#9B1016; --brand-light:#FDEBEC; --brand-ink:#A3121A;
+  --navy:#1B2A47; --on-navy:#FFFFFF; --on-navy-2:#B9C6DA; --navy-hover:rgba(255,255,255,.1);
+  --card:#FFFFFF; --page:#F4F6FA; --page2:#F8FAFC;
+  --text:#1A2942; --text-2:#5B6B82; --text-3:#94A3B8;
+  --border:#E5E7EB; --border-strong:#CBD5E1;
+  --input-bg:#FFFFFF; --input-border:#D3D9E2;
+  --ok-bg:#DCFCE7; --ok-fg:#166534;
+  --warn-bg:#FFFBEB; --warn-fg:#92400E;
+  --bad-bg:#FEE2E2; --bad-fg:#991B1B;
+  --info-bg:#EFF6FF; --info-fg:#1E40AF;
+  --star:#D97706; --star-off:#94A3B8;
+  --err:#DC2626; --ok:#16A34A; --warn:#D97706; --info:#2E6FD9;
+  --overlay:rgba(10,15,25,.55);
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 10px 28px rgba(16,24,40,.07);
+  --focus-border:#1B2A47; --focus:0 0 0 3px rgba(27,42,71,.16);
+  --radius:12px;
+  color-scheme:light;
+}
+[data-theme="dark"]{
+  --brand-light:rgba(196,21,28,.18); --brand-ink:#FF9499;
+  --navy:#131D31; --on-navy-2:#A9B6CB;
+  --card:#1A2233; --page:#0F1420; --page2:#131B2A;
+  --text:#E8EDF4; --text-2:#9AA7BC; --text-3:#6B7A92;
+  --border:#2A3547; --border-strong:#3A475C;
+  --input-bg:#131B2A; --input-border:#344157;
+  --ok-bg:rgba(34,197,94,.16); --ok-fg:#86EFAC;
+  --warn-bg:rgba(245,158,11,.16); --warn-fg:#FCD34D;
+  --bad-bg:rgba(239,68,68,.15); --bad-fg:#FCA5A5;
+  --info-bg:rgba(96,165,250,.15); --info-fg:#93C5FD;
+  --star:#FBBF24; --star-off:#6B7A92;
+  --err:#F87171; --ok:#4ADE80; --warn:#FBBF24; --info:#60A5FA;
+  --overlay:rgba(0,0,0,.65);
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.35);
+  --focus-border:#8EA8D6; --focus:0 0 0 3px rgba(142,168,214,.25);
+  color-scheme:dark;
+}
+
+/* ---------- الأساس ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:var(--page);color:var(--text);
+  font-family:"Cairo",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+  font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;line-height:1.3;color:var(--text)}
+p{margin:0}
+a{color:var(--brand-ink)}
+button,input,select,textarea{font:inherit}
+:focus-visible{outline:2px solid var(--focus-border);outline-offset:2px}
+[hidden]{display:none!important}
+.muted{color:var(--text-2)}
+.small{font-size:13px}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* ---------- الأزرار ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;
+  padding:10px 18px;border-radius:var(--radius);border:1.5px solid transparent;
+  font-weight:700;font-size:15px;cursor:pointer;text-decoration:none;white-space:nowrap;
+  transition:background-color .15s,border-color .15s}
+.btn:disabled,.btn[aria-busy="true"]{opacity:.7;cursor:not-allowed}
+.btn-primary{background:var(--brand);color:#FFFFFF}
+.btn-primary:hover:not(:disabled){background:var(--brand-dark)}
+.btn-ghost{background:transparent;border-color:var(--border-strong);color:var(--text)}
+.btn-ghost:hover:not(:disabled){border-color:var(--text-3)}
+.btn-block{width:100%}
+.btn-link{background:none;border:none;color:var(--brand-ink);font-weight:700;padding:6px 4px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.icon-btn{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:10px;border:none;background:transparent;color:var(--text);cursor:pointer;font-size:18px}
+.icon-btn:hover{background:var(--page2)}
+.lang-code{font-size:13px;font-weight:800;letter-spacing:.3px}
+.spin{display:inline-block;animation:spin .8s linear infinite}
+
+/* ---------- الحقول ---------- */
+.field{margin-bottom:16px}
+.lbl{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.control{position:relative}
+.input{width:100%;min-height:48px;padding:11px 14px;border:1.5px solid var(--input-border);
+  border-radius:var(--radius);background:var(--input-bg);color:var(--text);
+  font-size:16px;line-height:1.4;transition:border-color .15s,box-shadow .15s}
+.input::placeholder{color:var(--text-3);opacity:1}
+.input:focus{outline:none;border-color:var(--focus-border);box-shadow:var(--focus)}
+.input.has-icon{padding-inline-start:42px}
+.input.has-reveal{padding-inline-end:50px}
+.control>.ico{position:absolute;inset-inline-start:14px;top:50%;transform:translateY(-50%);
+  color:var(--text-3);font-size:17px;pointer-events:none;line-height:1}
+.control>.reveal{position:absolute;inset-inline-end:5px;top:50%;transform:translateY(-50%);
+  width:40px;height:40px;border:none;background:transparent;color:var(--text-2);
+  border-radius:9px;cursor:pointer;font-size:17px}
+.control>.reveal:hover{background:var(--page2)}
+.field.invalid .input,.field.invalid .input:focus{border-color:var(--err);background:var(--bad-bg)}
+.field.invalid .input:focus{box-shadow:0 0 0 3px rgba(220,38,38,.16)}
+.field.invalid .ico{color:var(--err)}
+.err-msg{display:none;color:var(--err);font-size:12.5px;font-weight:600;margin-top:5px}
+.field.invalid .err-msg{display:block}
+.hint{font-size:12.5px;color:var(--text-2);margin-top:5px}
+textarea.input{min-height:100px;resize:vertical;line-height:1.6}
+select.input{cursor:pointer}
+/* أرقام وإيميلات: اتجاه LTR عشان ترتيب المجموعات مايتقلبش، مع محاذاة الصفحة */
+.input.ltr{direction:ltr;text-align:right}
+input[type="date"].input,input[type="datetime-local"].input{min-width:0;max-width:100%}
+[dir="ltr"] .input.ltr{text-align:left}
+.opt{font-weight:600;font-size:12px;color:var(--text-3);margin-inline-start:6px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* فخ البوتات — مخفي بالقص مش بـ left:-9999px (اللي بيعمل سكرول عرضي في RTL) */
+.hp{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);opacity:0;pointer-events:none}
+.field.invalid .hint{display:none}
+
+/* ---------- الشعار على خلفية كحلية ---------- */
+.brand-mark{width:60px;height:60px;border-radius:14px;background:#FFFFFF;color:#C4151C;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:28px;flex-shrink:0}
+.brand-mark img{width:82%;height:82%;object-fit:contain}
+
+/* ---------- البطاقات والشارات ---------- */
+.container{max-width:1200px;margin:0 auto;padding:16px 12px 40px}
+.card{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
+.card-pad{padding:18px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;
+  font-size:12px;font-weight:700;background:var(--page2);color:var(--text-2);border:1px solid var(--border)}
+.badge-brand{background:var(--brand-light);color:var(--brand-ink);border-color:transparent}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--brand);color:#FFFFFF;
+  display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+@media (min-width:760px){.container{padding:24px 20px 48px}.card-pad{padding:22px}}
+
+/* ---------- حالات المكالمة (مشتركة: اللوحة · الإدارة · التقارير) ---------- */
+.st{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;border:1px solid transparent;line-height:1.7}
+.st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.st-pending{background:var(--page2);color:var(--text-2);border-color:var(--border)}
+.st-done{background:var(--ok-bg);color:var(--ok-fg)}
+.st-no_answer{background:var(--warn-bg);color:var(--warn-fg)}
+.st-postponed{background:var(--info-bg);color:var(--info-fg)}
+.st-rejected{background:var(--bad-bg);color:var(--bad-fg)}
+.ltr-text{direction:ltr;unicode-bidi:isolate}
+
+/* ---------- الشريط العلوي ---------- */
+.topbar{background:var(--navy);color:var(--on-navy);border-bottom:3px solid var(--brand);position:sticky;top:0;z-index:50}
+.tb-inner{max-width:1200px;margin:0 auto;padding:8px 12px 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tb-brand{display:flex;align-items:center;gap:10px;color:var(--on-navy);text-decoration:none;font-weight:800;font-size:16px;margin-inline-end:auto;min-width:0}
+.tb-logo{width:34px;height:34px;border-radius:9px;background:#FFFFFF;color:#C4151C;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:17px}
+.tb-logo img{width:84%;height:84%;object-fit:contain}
+.tb-actions{display:flex;align-items:center;gap:2px}
+.tb-actions .icon-btn{color:var(--on-navy)}
+.tb-actions .icon-btn:hover{background:var(--navy-hover)}
+.tb-nav{order:3;width:100%;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tb-nav::-webkit-scrollbar{display:none}
+.tb-nav a{display:inline-flex;align-items:center;gap:7px;color:var(--on-navy-2);text-decoration:none;
+  font-weight:700;font-size:14px;padding:7px 12px;border-radius:8px;white-space:nowrap}
+.tb-nav a:hover{color:var(--on-navy);background:var(--navy-hover)}
+.tb-nav a[aria-current="page"]{color:var(--on-navy);background:rgba(255,255,255,.14)}
+.tb-user{position:relative;margin-inline-start:4px}
+.tb-user-btn{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.16);color:var(--on-navy);border-radius:10px;
+  padding-block:4px;padding-inline:4px 8px;cursor:pointer}
+.tb-user-btn:hover{background:rgba(255,255,255,.14)}
+.tb-user-meta{display:none;flex-direction:column;text-align:start;line-height:1.25}
+.tb-user-name{font-size:13px;font-weight:700;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-user-role{font-size:11px;color:var(--on-navy-2)}
+.tb-caret{font-size:11px;color:var(--on-navy-2)}
+@media (min-width:760px){
+  .tb-inner{padding:6px 20px;gap:12px}
+  .tb-brand{margin-inline-end:10px}
+  .tb-nav{order:0;width:auto}
+  .tb-actions{margin-inline-start:auto}
+  .tb-user-meta{display:flex}
+}
+
+/* ---------- القائمة المنسدلة ---------- */
+.menu-pop{position:absolute;inset-inline-end:0;top:calc(100% + 8px);min-width:230px;background:var(--card);
+  color:var(--text);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:none;z-index:60}
+.menu-pop.open{display:block}
+.menu-head{padding:8px 10px 10px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.menu-name{font-weight:800;font-size:14px}
+.menu-sub{font-size:12.5px;color:var(--text-2)}
+.menu-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border:none;background:none;
+  border-radius:8px;color:var(--text);font-weight:600;font-size:14px;cursor:pointer;text-align:start}
+.menu-item:hover{background:var(--page2)}
+.menu-item.danger{color:var(--bad-fg)}
+
+/* ---------- النوافذ (Bottom sheet على الموبايل) ---------- */
+.modal{position:fixed;inset:0;z-index:1000;display:none;align-items:flex-end;justify-content:center;background:var(--overlay)}
+.modal.open{display:flex}
+.modal-box{width:100%;max-width:460px;background:var(--card);color:var(--text);border-radius:18px 18px 0 0;
+  box-shadow:var(--shadow);max-height:92vh;overflow:auto}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 14px 18px;border-bottom:1px solid var(--border)}
+.modal-head h2{font-size:17px;font-weight:800}
+.modal-body{padding:18px}
+.form-actions{display:flex;gap:10px;margin-top:8px}
+.form-actions .btn{flex:1}
+@media (min-width:600px){.modal{align-items:center;padding:16px}.modal-box{border-radius:16px}}
+
+/* ---------- التنبيهات ---------- */
+#toastBox{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;width:calc(100% - 28px);
+  max-width:420px;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;display:flex;align-items:flex-start;gap:10px;background:var(--card);color:var(--text);
+  border:1px solid var(--border);border-inline-start:4px solid var(--info);border-radius:11px;
+  padding:12px 14px;font-size:14px;font-weight:600;box-shadow:var(--shadow);transition:opacity .3s}
+.toast.hide{opacity:0}
+.toast i{font-size:17px;line-height:1.4;color:var(--info)}
+.toast-success{border-inline-start-color:var(--ok)}.toast-success i{color:var(--ok)}
+.toast-error{border-inline-start-color:var(--err)}.toast-error i{color:var(--err)}
+.toast-warning{border-inline-start-color:var(--warn)}.toast-warning i{color:var(--warn)}
+
+/* ---------- التحميل · الحجب · المتابعة ---------- */
+#preload{position:fixed;inset:0;z-index:3000;background:var(--page);display:flex;align-items:center;justify-content:center}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--brand);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.blocker{position:fixed;inset:0;z-index:2000;background:var(--page);display:flex;align-items:center;justify-content:center;padding:20px}
+.blocker-card{max-width:380px;width:100%;text-align:center;background:var(--card);color:var(--text);
+  border:1px solid var(--border);border-radius:16px;padding:28px 22px;box-shadow:var(--shadow)}
+.blocker-ico{width:62px;height:62px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;
+  font-size:27px;background:var(--brand-light);color:var(--brand-ink)}
+.blocker-card h2{font-size:19px;font-weight:800;margin-bottom:6px}
+.blocker-card p{margin-bottom:20px}
+.continue-bar{position:fixed;left:12px;right:12px;bottom:12px;z-index:2500;max-width:520px;margin:0 auto;
+  display:flex;align-items:center;gap:12px;background:var(--card);color:var(--text);
+  border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:10px 10px 10px 14px}
+.continue-bar span{flex:1;font-size:13.5px;font-weight:600}
+</style>
+
+<style>
+.st-head{background:var(--navy);color:var(--on-navy);border-bottom:5px solid var(--brand)}
+.st-inner{max-width:560px;margin:0 auto;padding:10px 14px 22px}
+.st-tools{display:flex;justify-content:flex-end;gap:2px}
+.st-tools .icon-btn{color:var(--on-navy)}
+.st-tools .icon-btn:hover{background:var(--navy-hover)}
+.st-brand{display:flex;align-items:center;gap:14px;margin-top:2px}
+.st-company{font-size:13px;font-weight:700;color:var(--on-navy-2)}
+.st-head h1{font-size:23px;font-weight:800;color:var(--on-navy);line-height:1.3}
+.st-wrap{max-width:560px;margin:0 auto;padding:18px 12px 30px}
+.st-card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:18px}
+.st-intro{font-size:13.5px;color:var(--text-2);margin-bottom:16px}
+
+.res{text-align:center;padding:6px 0 2px}
+.res-ico{width:74px;height:74px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:34px;background:var(--page2);color:var(--text-2)}
+.res-ico.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.res-ico.wait{background:var(--warn-bg);color:var(--warn-fg)}
+.res-ico.no{background:var(--bad-bg);color:var(--bad-fg)}
+.res h2{font-size:20px;font-weight:800;margin-bottom:4px}
+.res .who{font-size:14px;color:var(--text-2);margin-bottom:16px}
+.steps{display:flex;flex-direction:column;gap:0;text-align:start;margin:10px 0 4px}
+.stp{display:flex;gap:12px;align-items:flex-start;padding:7px 0}
+.stp-dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--border-strong);display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--text-3);flex:0 0 auto;background:var(--card)}
+.stp.done .stp-dot{background:var(--ok);border-color:var(--ok);color:#FFFFFF}
+.stp.cur .stp-dot{background:var(--brand);border-color:var(--brand);color:#FFFFFF}
+.stp-txt{font-size:14px;font-weight:700;color:var(--text-3);padding-top:1px}
+.stp.done .stp-txt,.stp.cur .stp-txt{color:var(--text)}
+.stp-line{width:2px;background:var(--border);margin-inline-start:10px;height:10px}
+.note-box{background:var(--page2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13.5px;margin-top:14px}
+.note-box b{display:block;margin-bottom:3px}
+.again{margin-top:18px}
+.apply-link{margin-top:8px}
+.st-legal{text-align:center;font-size:12px;color:var(--text-3);padding-top:16px}
+@media (min-width:600px){.st-inner{padding:14px 20px 30px}.st-head h1{font-size:28px}}
+</style>
+</head>
+<body>
+<div id="toastBox" role="status" aria-live="polite"></div>
+
+<header class="st-head">
+  <div class="st-inner">
+    <div class="st-tools">
+      <button type="button" class="icon-btn" onclick="toggleLang()" data-i18n-label="ui.lang"><span class="lang-code" data-lang-code>EN</span></button>
+      <button type="button" class="icon-btn" onclick="toggleTheme()" data-i18n-label="ui.theme"><i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i></button>
+    </div>
+    <div class="st-brand">
+      <div class="brand-mark" data-brand-logo></div>
+      <div>
+        <div class="st-company" id="stCompany">Cairo 3A</div>
+        <h1 data-i18n="ts.title">متابعة طلبك</h1>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="st-wrap">
+  <section class="st-card" id="formCard">
+    <p class="st-intro" data-i18n="ts.intro"></p>
+    <form id="stForm" onsubmit="return checkStatus(event)" novalidate>
+      <div class="field" id="f_ref">
+        <label class="lbl" for="fRef" data-i18n="ts.ref">رقم الطلب</label>
+        <input class="input ltr" id="fRef" maxlength="20" placeholder="APP_0001" autocapitalize="characters" spellcheck="false">
+        <div class="err-msg" data-i18n="ts.refReq"></div>
+      </div>
+      <div class="field" id="f_mob">
+        <label class="lbl" for="fMob" data-i18n="ts.mobile">رقم الموبايل</label>
+        <input class="input ltr" id="fMob" type="tel" inputmode="tel" maxlength="20" placeholder="01xxxxxxxxx">
+        <div class="err-msg" data-i18n="ts.mobileReq"></div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="stBtn"><span data-i18n="ts.check">متابعة</span></button>
+      <a class="btn btn-ghost btn-block apply-link" id="applyLink" target="_top"><span data-i18n="ts.applyNew">تقديم طلب جديد</span></a>
+    </form>
+  </section>
+
+  <section class="st-card res" id="resCard" hidden>
+    <div class="res-ico" id="resIco"><i class="bi" aria-hidden="true"></i></div>
+    <h2 id="resTitle"></h2>
+    <p class="who" id="resWho"></p>
+    <div class="steps" id="resSteps"></div>
+    <div class="note-box" id="resNote" hidden></div>
+    <button type="button" class="btn btn-ghost btn-block again" onclick="resetStatus()"><span data-i18n="ts.again">متابعة طلب تاني</span></button>
+  </section>
+
+  <footer class="st-legal" id="stLegal" dir="ltr"></footer>
+</main>
+
+<script>
+/* ============================================================
+   إعداد الاستضافة الخارجية (GitHub Pages)
+   حط نفس API_URL الموجود في index.html
+   ============================================================ */
+var API_URL = 'https://script.google.com/macros/s/AKfycbzvU4hv-gZztL8iI_cO3zSvmyEv9F1bZmnxf6mAt6ai2jkVMFNT5c9WupPHtWJGvwEITw/exec';
+
+/* اسم ملف صفحة التقديم جنب الملف ده */
+var APPLY_PAGE = 'index.html';
+
+var BOOT = {
+  baseUrl: API_URL,
+  page: 'status',
+  pages: ['apply', 'status'],
+  ref: (function () {
+    var m = location.search.match(/[?&]ref=([^&]*)/);
+    return m ? decodeURIComponent(m[1]).replace(/[^A-Za-z0-9_\-]/g, '').toUpperCase().slice(0, 40) : '';
+  })(),
+  src: '',
+  pwdMin: 8,
+  lockMinutes: 10,
+  brand: { name: 'Cairo 3A', logo: '' }
+};
+
+/* جسر fetch بدل google.script.run — زي صفحة التقديم بالظبط */
+(function () {
+  function call(action, payload) {
+    return fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: action, payload: payload || {} })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('E_NETWORK');
+      return r.json();
+    });
+  }
+
+  function runner(onOk, onFail) {
+    var api = {
+      withSuccessHandler: function (cb) { return runner(cb, onFail); },
+      withFailureHandler: function (cb) { return runner(onOk, cb); }
+    };
+    ['apply_options', 'apply_submit', 'status_check'].forEach(function (name) {
+      api[name] = function () {
+        var args = [].slice.call(arguments);
+        var payload = name === 'status_check' ? { appId: args[0], mobile: args[1] } : args[0];
+        call(name, payload).then(
+          function (res) { if (onOk) onOk(res); },
+          function (err) { if (onFail) onFail(err); }
+        );
+      };
+    });
+    return api;
+  }
+
+  window.google = { script: { run: runner(null, null) } };
+})();
+</script>
+<script>
+/* ============================================================
+   Client.html · أدوات الواجهة المشتركة
+   يتضمَّن في آخر body بعد سطر تعريف BOOT
+   ============================================================ */
+if (typeof BOOT === 'undefined') window.BOOT = {};
+
+var KEYS = { token: 'HR_TOKEN', user: 'HR_USER', theme: 'HR_THEME', lang: 'HR_LANG' };
+var ME = null;
+var _MEM_ = {};
+
+/* ---------- تخزين محلي (مع بديل في الذاكرة لو اتمنع) ---------- */
+function store(k, v) {
+  try {
+    if (v === undefined) return localStorage.getItem(k);
+    if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, String(v));
+  } catch (e) {
+    if (v === undefined) return Object.prototype.hasOwnProperty.call(_MEM_, k) ? _MEM_[k] : null;
+    if (v === null) delete _MEM_[k]; else _MEM_[k] = String(v);
+  }
+  return null;
+}
+
+function $(id) { return document.getElementById(id); }
+
+/** ٠١٢ و ۰۱۲ → 012 */
+function normDigits(s) {
+  return String(s == null ? '' : s)
+    .replace(/[\u0660-\u0669]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
+    .replace(/[\u06F0-\u06F9]/g, function (c) { return String(c.charCodeAt(0) - 0x06F0); });
+}
+
+/** +20 101 234 5678 · ٠١٠... → 01012345678 (نفس منطق السيرفر) */
+function normMobile(s) {
+  var d = normDigits(s).replace(/\D/g, '');
+  if (d.indexOf('0020') === 0) d = d.slice(4);
+  else if (d.indexOf('20') === 0 && d.length === 12) d = d.slice(2);
+  if (d.length === 10 && d.charAt(0) === '1') d = '0' + d;
+  return d;
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+
+/* ============================================================
+   اللغة
+   ============================================================ */
+var LANG = store(KEYS.lang) === 'en' ? 'en' : 'ar';
+
+var I18N = {
+  ar: {
+    'app.name': 'نظام التوظيف',
+    'app.tagline': 'استقبال طلبات التوظيف، توزيعها على فريق الموارد البشرية، ومتابعة كل مكالمة.',
+    'ui.lang': 'التبديل إلى English',
+    'ui.theme': 'تبديل المظهر',
+    'ui.close': 'إغلاق',
+    'ui.cancel': 'إلغاء',
+    'ui.continue': 'متابعة',
+    'ui.retry': 'إعادة المحاولة',
+    'ui.showPwd': 'إظهار كلمة المرور',
+    'ui.tapContinue': 'لو الصفحة ماتفتحتش لوحدها، اضغط متابعة.',
+    'nav.home': 'الرئيسية',
+    'nav.reports': 'التقارير',
+    'nav.admin': 'الإدارة',
+    'role.ADMIN': 'مسؤول النظام',
+    'role.HR': 'موظف موارد بشرية',
+    'tb.menu': 'قائمة الحساب',
+    'tb.changePwd': 'تغيير كلمة المرور',
+    'tb.logout': 'تسجيل الخروج',
+    'cp.title': 'تغيير كلمة المرور',
+    'cp.cur': 'كلمة المرور الحالية',
+    'cp.new': 'كلمة المرور الجديدة',
+    'cp.conf': 'تأكيد كلمة المرور الجديدة',
+    'cp.hint': '{min} أحرف على الأقل',
+    'cp.curReq': 'اكتب كلمة المرور الحالية',
+    'cp.newReq': 'كلمة المرور لازم تكون {min} أحرف على الأقل',
+    'cp.mismatch': 'التأكيد مش مطابق لكلمة المرور الجديدة',
+    'cp.save': 'حفظ كلمة المرور',
+    'cp.saving': 'جارٍ الحفظ...',
+    'cp.done': 'تم تغيير كلمة المرور، واتقفلت أي جلسة تانية لحسابك.',
+    'auth.expiredTitle': 'انتهت الجلسة',
+    'auth.expiredBody': 'سجّل الدخول مرة تانية عشان تكمل.',
+    'auth.toLogin': 'تسجيل الدخول',
+    'auth.forbiddenTitle': 'الصفحة دي لمسؤول النظام',
+    'auth.forbiddenBody': 'حسابك مايسمحش بفتحها.',
+    'auth.toHome': 'الرجوع للرئيسية',
+    'auth.errorTitle': 'تعذّر تحميل الصفحة',
+    'err.E_BAD_CREDS': 'اسم المستخدم أو كلمة المرور غير صحيحة',
+    'err.E_LOCKED': 'محاولات خاطئة كتير. جرّب تاني بعد {minutes} دقايق.',
+    'err.E_INACTIVE': 'الحساب ده موقوف. كلّم مسؤول النظام.',
+    'err.E_AUTH': 'انتهت الجلسة. سجّل الدخول تاني.',
+    'err.E_FORBIDDEN': 'حسابك مايسمحش بالعملية دي.',
+    'err.E_BUSY': 'النظام بيحفظ طلب تاني دلوقتي. جرّب بعد ثواني.',
+    'err.E_WEAK_PWD': 'كلمة المرور لازم تكون {min} أحرف على الأقل.',
+    'err.E_BAD_OLD_PWD': 'كلمة المرور الحالية غير صحيحة.',
+    'err.E_VALIDATION': 'فيه بيانات ناقصة أو غير صحيحة.',
+    'err.E_EXISTS': 'اسم المستخدم ده مستخدم قبل كده.',
+    'err.E_NOT_FOUND': 'العنصر مش موجود. حدّث الصفحة.',
+    'err.E_SELF': 'مينفعش تشيل صلاحية الأدمن من حسابك أو توقفه.',
+    'err.E_LAST_ADMIN': 'لازم يفضل حساب أدمن واحد نشط على الأقل.',
+    'err.E_CONFIG': 'إعداد النظام ناقص. شغّل hr_setup من المحرر.',
+    'err.E_NETWORK': 'مفيش اتصال بالسيرفر. اتأكد من الإنترنت وجرّب تاني.',
+    'err.E_NO_GAS': 'افتح الصفحة من رابط النظام.',
+    'err.E_NO_FN': 'النسخة المنشورة ناقصة ملفات. انشر نسخة جديدة من Deploy.',
+    'err.E_UNKNOWN': 'حصل خطأ غير متوقع.'
+  },
+  en: {
+    'app.name': 'Recruitment System',
+    'app.tagline': 'Receive job applications, assign them to the HR team, and track every call.',
+    'ui.lang': 'التبديل إلى العربية',
+    'ui.theme': 'Toggle theme',
+    'ui.close': 'Close',
+    'ui.cancel': 'Cancel',
+    'ui.continue': 'Continue',
+    'ui.retry': 'Try again',
+    'ui.showPwd': 'Show password',
+    'ui.tapContinue': "If the page didn't open, tap Continue.",
+    'nav.home': 'Home',
+    'nav.reports': 'Reports',
+    'nav.admin': 'Admin',
+    'role.ADMIN': 'System admin',
+    'role.HR': 'HR staff',
+    'tb.menu': 'Account menu',
+    'tb.changePwd': 'Change password',
+    'tb.logout': 'Sign out',
+    'cp.title': 'Change password',
+    'cp.cur': 'Current password',
+    'cp.new': 'New password',
+    'cp.conf': 'Confirm new password',
+    'cp.hint': 'At least {min} characters',
+    'cp.curReq': 'Enter your current password',
+    'cp.newReq': 'Password must be at least {min} characters',
+    'cp.mismatch': "Confirmation doesn't match the new password",
+    'cp.save': 'Save password',
+    'cp.saving': 'Saving…',
+    'cp.done': 'Password changed. Your other sessions were signed out.',
+    'auth.expiredTitle': 'Session expired',
+    'auth.expiredBody': 'Sign in again to continue.',
+    'auth.toLogin': 'Sign in',
+    'auth.forbiddenTitle': 'This page is for admins',
+    'auth.forbiddenBody': "Your account can't open it.",
+    'auth.toHome': 'Back to home',
+    'auth.errorTitle': "Couldn't load the page",
+    'err.E_BAD_CREDS': 'Wrong username or password',
+    'err.E_LOCKED': 'Too many failed attempts. Try again in {minutes} minutes.',
+    'err.E_INACTIVE': 'This account is disabled. Contact your admin.',
+    'err.E_AUTH': 'Session expired. Sign in again.',
+    'err.E_FORBIDDEN': "Your account can't do this.",
+    'err.E_BUSY': 'The system is saving another request. Try again in a few seconds.',
+    'err.E_WEAK_PWD': 'Password must be at least {min} characters.',
+    'err.E_BAD_OLD_PWD': 'Current password is incorrect.',
+    'err.E_VALIDATION': 'Some data is missing or invalid.',
+    'err.E_EXISTS': 'That username is already taken.',
+    'err.E_NOT_FOUND': 'Item not found. Refresh the page.',
+    'err.E_SELF': "You can't remove admin rights from your own account or disable it.",
+    'err.E_LAST_ADMIN': 'At least one active admin account is required.',
+    'err.E_CONFIG': 'System setup is incomplete. Run hr_setup from the editor.',
+    'err.E_NETWORK': "Can't reach the server. Check your connection and try again.",
+    'err.E_NO_GAS': 'Open this page from the system link.',
+    'err.E_NO_FN': 'The deployed version is missing files. Deploy a new version.',
+    'err.E_UNKNOWN': 'Something went wrong.'
+  }
+};
+
+/** الصفحات تضيف نصوصها: i18nAdd({ar:{...}, en:{...}}) */
+function i18nAdd(extra) {
+  ['ar', 'en'].forEach(function (l) {
+    var src = (extra && extra[l]) || {};
+    Object.keys(src).forEach(function (k) { I18N[l][k] = src[k]; });
+  });
+}
+
+function t(key, vars) {
+  var s = I18N[LANG][key];
+  if (s == null) s = I18N.ar[key];
+  if (s == null) return key;
+  var v = {
+    min: BOOT.pwdMin || 8,
+    minutes: BOOT.lockMinutes || 10,
+    mb: (BOOT.apply && BOOT.apply.cvMaxMb) || 5,
+    company: (BOOT.brand && BOOT.brand.name) || 'Cairo 3A'
+  };
+  if (vars) Object.keys(vars).forEach(function (k) { v[k] = vars[k]; });
+  return String(s).replace(/\{(\w+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; });
+}
+
+/** نص مترجم بمتغيرات — بيتحدّث تلقائيًا لما اللغة تتغير */
+function setI18n(el, key, vars) {
+  if (!el) return;
+  el.setAttribute('data-i18n', key);
+  el._i18nVars = vars || null;
+  el.textContent = t(key, vars);
+}
+
+function applyI18n(root) {
+  var d = document.documentElement;
+  d.setAttribute('lang', LANG);
+  d.setAttribute('dir', LANG === 'en' ? 'ltr' : 'rtl');
+  var scope = root || document;
+  scope.querySelectorAll('[data-i18n]').forEach(function (el) {
+    el.textContent = t(el.getAttribute('data-i18n'), el._i18nVars);
+  });
+  scope.querySelectorAll('[data-i18n-ph]').forEach(function (el) {
+    el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph')));
+  });
+  scope.querySelectorAll('[data-i18n-label]').forEach(function (el) {
+    var s = t(el.getAttribute('data-i18n-label'));
+    el.setAttribute('aria-label', s);
+    el.setAttribute('title', s);
+  });
+  document.querySelectorAll('[data-lang-code]').forEach(function (el) {
+    el.textContent = LANG === 'ar' ? 'EN' : 'ع';
+  });
+}
+
+function toggleLang() {
+  LANG = LANG === 'ar' ? 'en' : 'ar';
+  store(KEYS.lang, LANG);
+  applyI18n();
+  if (typeof onLangChange === 'function') onLangChange();
+}
+
+/* ============================================================
+   الثيم
+   ============================================================ */
+function currentTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+}
+function syncThemeIcons() {
+  var dark = currentTheme() === 'dark';
+  document.querySelectorAll('[data-theme-icon]').forEach(function (i) {
+    i.className = dark ? 'bi bi-sun' : 'bi bi-moon-stars';
+  });
+}
+function toggleTheme() {
+  var th = currentTheme() === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', th);
+  store(KEYS.theme, th);
+  syncThemeIcons();
+}
+
+/* ============================================================
+   استدعاء السيرفر
+   run('fn', a, b).then(res).catch(handleErr)
+   - أي {ok:false, code} من السيرفر بيتحول rejection بنفس الكود
+   ============================================================ */
+function run(fn) {
+  var args = [].slice.call(arguments, 1);
+  return new Promise(function (resolve, reject) {
+    if (!window.google || !google.script || !google.script.run) {
+      var e = new Error('E_NO_GAS'); e.code = 'E_NO_GAS'; reject(e); return;
+    }
+    var runner = google.script.run
+      .withSuccessHandler(function (res) {
+        if (res && res.ok === false) {
+          var err = new Error(res.code || 'E_UNKNOWN');
+          err.code = res.code || 'E_UNKNOWN';
+          err.data = res;
+          reject(err);
+        } else {
+          resolve(res);
+        }
+      })
+      .withFailureHandler(function (err) { reject(err); });
+    if (typeof runner[fn] !== 'function') {
+      var nf = new Error('E_NO_FN: ' + fn); nf.code = 'E_NO_FN'; reject(nf); return;
+    }
+    runner[fn].apply(null, args);
+  });
+}
+
+function errCode(err) {
+  if (err && err.code) return err.code;
+  var m = String((err && err.message) || err || '');
+  var c = m.match(/\bE_[A-Z_]+\b/);
+  if (c) return c[0];
+  if (/NetworkError|HTTP 0|Failed to fetch|connection/i.test(m)) return 'E_NETWORK';
+  return '';
+}
+
+function errText(err) {
+  var c = errCode(err);
+  if (c && I18N.ar['err.' + c] != null) return t('err.' + c, err && err.data);
+  var m = String((err && err.message) || err || '').replace(/^(Error|Exception):\s*/, '');
+  return m || t('err.E_UNKNOWN');
+}
+
+/** المعالج العام: الجلسة المنتهية تحجب الصفحة، وغير كده تنبيه */
+function handleErr(err) {
+  if (window.console) console.error(err);
+  if (errCode(err) === 'E_AUTH') { sessionExpired(); return; }
+  toast(errText(err), 'error');
+}
+
+/* ============================================================
+   واجهة عامة
+   ============================================================ */
+function toast(msg, type) {
+  type = type || 'info';
+  var icons = {
+    success: 'bi-check-circle-fill', error: 'bi-exclamation-octagon-fill',
+    warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill'
+  };
+  var box = $('toastBox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'toastBox';
+    box.setAttribute('role', 'status');
+    box.setAttribute('aria-live', 'polite');
+    document.body.appendChild(box);
+  }
+  var el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.innerHTML = '<i class="bi ' + icons[type] + '" aria-hidden="true"></i><span></span>';
+  el.querySelector('span').textContent = msg;
+  box.appendChild(el);
+  setTimeout(function () {
+    el.classList.add('hide');
+    setTimeout(function () { el.remove(); }, 320);
+  }, type === 'error' ? 5200 : 3400);
+}
+
+/**
+ * يعلّم الحقل كناقص.
+ * key اختياري لنص خطأ مختلف؛ من غيره بيرجع النص الأصلي للحقل
+ */
+function mark(id, on, key) {
+  var f = $(id);
+  if (!f) return;
+  f.classList.toggle('invalid', !!on);
+  var inp = f.querySelector('input:not([type=file]),select,textarea');
+  if (inp) { if (on) inp.setAttribute('aria-invalid', 'true'); else inp.removeAttribute('aria-invalid'); }
+  var m = f.querySelector('.err-msg');
+  if (m) {
+    if (m._defKey === undefined) m._defKey = m.getAttribute('data-i18n') || '';
+    var k = key || m._defKey;
+    if (k) setI18n(m, k);
+  }
+}
+
+/** زرار مشغول: يغيّر النص المترجم ويقفل الزرار */
+function setBusy(btn, on, key) {
+  if (!btn) return;
+  var lbl = btn.querySelector('[data-i18n]') || btn;
+  if (on) {
+    if (!btn._label) btn._label = lbl.getAttribute('data-i18n');
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    if (key) setI18n(lbl, key);
+  } else {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    if (btn._label) setI18n(lbl, btn._label);
+  }
+}
+
+function toggleReveal(btn) {
+  var inp = btn.parentNode.querySelector('input');
+  var show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+  btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+}
+
+function hidePreload() { var p = $('preload'); if (p) p.hidden = true; }
+
+function applyBrand() {
+  var b = BOOT.brand || {};
+  document.querySelectorAll('[data-brand-logo]').forEach(function (box) {
+    box.innerHTML = '';
+    if (b.logo) {
+      var img = new Image();
+      img.alt = b.name || '';
+      img.src = b.logo;
+      box.appendChild(img);
+    } else {
+      box.innerHTML = '<i class="bi bi-people-fill" aria-hidden="true"></i>';
+    }
+  });
+}
+
+function initials(u) {
+  var n = String((u && (u.fullName || u.username)) || '?').trim().split(/\s+/);
+  return (n[0].charAt(0) + (n[1] ? n[1].charAt(0) : '')).toUpperCase();
+}
+
+/* ---------- النوافذ ---------- */
+function openModal(id) {
+  var m = $(id);
+  if (!m) return;
+  m._opener = document.activeElement;
+  m.classList.add('open');
+  var f = m.querySelector('input:not([hidden]),select,textarea');
+  if (f) setTimeout(function () { f.focus(); }, 40);
+}
+function closeModal(id) {
+  var m = $(id);
+  if (!m || !m.classList.contains('open')) return;
+  m.classList.remove('open');
+  if (m._opener && m._opener.focus) m._opener.focus();
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(function (m) { closeModal(m.id); });
+});
+document.addEventListener('click', function (e) {
+  if (e.target.classList && e.target.classList.contains('modal')) closeModal(e.target.id);
+});
+
+/* ============================================================
+   التنقل
+   صفحات GAS بتتعرض جوه iframe، والتنقل من الكود ممكن يتمنع من
+   غير ضغطة من المستخدم. عشان كده:
+   - كل الروابط <a target="_top"> حقيقية
+   - go() بتحاول، ولو الصفحة مااتقفلتش يظهر زرار متابعة
+   ============================================================ */
+function pageUrl(page, params) {
+  var url = (BOOT.baseUrl || '') + '?page=' + encodeURIComponent(page);
+  if (params) Object.keys(params).forEach(function (k) {
+    url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  });
+  return url;
+}
+
+function bindPageLinks(root) {
+  (root || document).querySelectorAll('a[data-page]').forEach(function (a) {
+    a.href = pageUrl(a.getAttribute('data-page'));
+    a.target = '_top';
+  });
+}
+
+function go(page) {
+  var url = pageUrl(page);
+  try { window.top.location.href = url; } catch (e) { /* ممنوع — الزرار هيظهر */ }
+  setTimeout(function () { showContinue(url); }, 2500);
+}
+
+function showContinue(url) {
+  var bar = $('continueBar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'continueBar';
+    bar.className = 'continue-bar';
+    bar.innerHTML = '<span data-i18n="ui.tapContinue"></span>' +
+                    '<a class="btn btn-primary" target="_top" data-i18n="ui.continue"></a>';
+    document.body.appendChild(bar);
+  }
+  bar.querySelector('a').href = url;
+  applyI18n(bar);
+}
+
+/* ============================================================
+   الجلسة
+   ============================================================ */
+function getToken() { return store(KEYS.token) || ''; }
+
+function saveSession(res) {
+  store(KEYS.token, res.token);
+  store(KEYS.user, JSON.stringify(res.user));
+  ME = res.user;
+}
+
+function clearSession() {
+  store(KEYS.token, null);
+  store(KEYS.user, null);
+  ME = null;
+}
+
+/**
+ * أول سطر في أي صفحة محمية:
+ * requireAuth(['ADMIN','HR']).then(function(me){ ... }).catch(function(){});
+ */
+function requireAuth(roles) {
+  var tok = getToken();
+  if (!tok) {
+    sessionExpired();
+    return Promise.reject(new Error('E_AUTH'));
+  }
+  return run('auth_me', tok).then(function (u) {
+    ME = u;
+    store(KEYS.user, JSON.stringify(u));
+    if (roles && roles.indexOf(u.role) < 0) {
+      showBlocker('forbidden');
+      throw new Error('E_FORBIDDEN');
+    }
+    return u;
+  }, function (err) {
+    if (errCode(err) === 'E_AUTH') sessionExpired();
+    else showBlocker('error', errText(err));
+    throw err;
+  });
+}
+
+function sessionExpired() {
+  clearSession();
+  showBlocker('expired');
+}
+
+function showBlocker(kind, text) {
+  hidePreload();
+  var cfg = {
+    expired:   { icon: 'bi-lock',        title: 'auth.expiredTitle',   body: 'auth.expiredBody',   btn: 'auth.toLogin', page: 'login' },
+    forbidden: { icon: 'bi-shield-lock', title: 'auth.forbiddenTitle', body: 'auth.forbiddenBody', btn: 'auth.toHome',  page: 'home' },
+    error:     { icon: 'bi-wifi-off',    title: 'auth.errorTitle',     body: '',                   btn: 'ui.retry',     page: BOOT.page || 'login' }
+  }[kind];
+
+  var el = $('blocker');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'blocker';
+    el.className = 'blocker';
+    document.body.appendChild(el);
+  }
+  el.innerHTML =
+    '<div class="blocker-card" role="alertdialog" aria-modal="true" aria-labelledby="blkTitle">' +
+      '<div class="blocker-ico"><i class="bi ' + cfg.icon + '" aria-hidden="true"></i></div>' +
+      '<h2 id="blkTitle" data-i18n="' + cfg.title + '"></h2>' +
+      '<p class="muted blk-text"' + (cfg.body ? ' data-i18n="' + cfg.body + '"' : '') + '></p>' +
+      '<a class="btn btn-primary btn-block" data-page="' + cfg.page + '" data-i18n="' + cfg.btn + '"></a>' +
+    '</div>';
+  if (!cfg.body) el.querySelector('.blk-text').textContent = text || '';
+  bindPageLinks(el);
+  applyI18n(el);
+  el.hidden = false;
+}
+
+function logout() {
+  var tok = getToken();
+  clearSession();
+  var done = function () { go('login'); };
+  run('auth_logout', tok).then(done, done);
+}
+
+/* ---------- تهيئة عامة ---------- */
+applyI18n();
+syncThemeIcons();
+applyBrand();
+bindPageLinks();
+</script>
+
+<script>
+i18nAdd({
+  ar: {
+    'ts.title': 'متابعة طلبك',
+    'ts.intro': 'اكتب رقم الطلب اللي وصلك بعد التقديم، ورقم الموبايل اللي سجّلت بيه.',
+    'ts.ref': 'رقم الطلب',
+    'ts.refReq': 'اكتب رقم الطلب (مثال: APP_0001)',
+    'ts.mobile': 'رقم الموبايل',
+    'ts.mobileReq': 'اكتب رقم الموبايل اللي قدّمت بيه',
+    'ts.check': 'متابعة',
+    'ts.checking': 'جارٍ البحث...',
+    'ts.again': 'متابعة طلب تاني',
+    'ts.applyNew': 'تقديم طلب جديد',
+    'ts.notFound': 'مفيش طلب بالبيانات دي',
+    'ts.notFoundBody': 'اتأكد من رقم الطلب ورقم الموبايل، لأن لازم الاتنين يكونوا نفس اللي قدّمت بيهم.',
+    'ts.busy': 'محاولات كتير. جرّب تاني بعد شوية.',
+    'ts.job': 'وظيفة {job} · قدّمت يوم {date}',
+    'ts.received': 'طلبك وصلنا',
+    'ts.underReview': 'طلبك تحت المراجعة',
+    'ts.inProgress': 'طلبك ماشي',
+    'ts.hired': 'مبروك، اتقبلت',
+    'ts.closed': 'الطلب اتقفل',
+    'ts.s_new': 'استلمنا الطلب',
+    'ts.s_screening': 'اتكلمنا معاك',
+    'ts.s_interview': 'مقابلة',
+    'ts.s_offer': 'عرض عمل',
+    'ts.s_hired': 'تعيين',
+    'ts.waitCall': 'فريق الموارد البشرية هيتصل بيك على الرقم اللي سجّلته. خلي تليفونك معاك.',
+    'ts.interviewAt': 'موعد المقابلة',
+    'ts.closedNote': 'شكرًا لاهتمامك بالعمل معانا. تقدر تقدّم على وظيفة تانية في أي وقت.'
+  },
+  en: {
+    'ts.title': 'Track your application',
+    'ts.intro': 'Enter the application number you received, and the mobile number you applied with.',
+    'ts.ref': 'Application number',
+    'ts.refReq': 'Enter your application number (e.g. APP_0001)',
+    'ts.mobile': 'Mobile number',
+    'ts.mobileReq': 'Enter the mobile number you applied with',
+    'ts.check': 'Track',
+    'ts.checking': 'Searching…',
+    'ts.again': 'Track another application',
+    'ts.applyNew': 'Submit a new application',
+    'ts.notFound': 'No application matches these details',
+    'ts.notFoundBody': 'Check the application number and mobile number — both must match what you applied with.',
+    'ts.busy': 'Too many attempts. Please try again shortly.',
+    'ts.job': '{job} · applied on {date}',
+    'ts.received': 'We received your application',
+    'ts.underReview': 'Your application is under review',
+    'ts.inProgress': 'Your application is moving forward',
+    'ts.hired': 'Congratulations, you were hired',
+    'ts.closed': 'This application is closed',
+    'ts.s_new': 'Application received',
+    'ts.s_screening': 'We spoke with you',
+    'ts.s_interview': 'Interview',
+    'ts.s_offer': 'Job offer',
+    'ts.s_hired': 'Hired',
+    'ts.waitCall': 'Our HR team will call the number you registered. Please keep your phone handy.',
+    'ts.interviewAt': 'Interview date',
+    'ts.closedNote': 'Thank you for your interest. You can apply for another position any time.'
+  }
+});
+applyI18n();
+
+var STEPS = ['new', 'screening', 'interview', 'offer', 'hired'];
+
+(function init() {
+  var company = (BOOT.brand && BOOT.brand.name) || 'Cairo 3A';
+  $('stCompany').textContent = company;
+  $('stLegal').textContent = '© ' + new Date().getFullYear() + ' ' + company;
+  if (BOOT.ref) $('fRef').value = BOOT.ref;
+  $('applyLink').href = APPLY_PAGE;
+  $('fRef').addEventListener('input', function () { mark('f_ref', false); });
+  $('fMob').addEventListener('input', function () { mark('f_mob', false); });
+})();
+
+function onLangChange() { if (window.LAST_RES) showResult(window.LAST_RES); }
+
+function checkStatus(ev) {
+  if (ev) ev.preventDefault();
+  var ref = $('fRef').value.trim().toUpperCase();
+  var mob = normMobile($('fMob').value);
+  var bad = [];
+  if (!/^[A-Z]{2,5}[_-]?\d{2,6}$/.test(ref)) bad.push('f_ref');
+  if (!/^01[0125]\d{8}$/.test(mob)) bad.push('f_mob');
+  ['f_ref', 'f_mob'].forEach(function (id) { mark(id, bad.indexOf(id) >= 0); });
+  if (bad.length) { $(bad[0]).querySelector('input').focus(); return false; }
+
+  var btn = $('stBtn');
+  setBusy(btn, true, 'ts.checking');
+  run('status_check', ref, mob)
+    .then(function (res) { window.LAST_RES = res; showResult(res); })
+    .catch(function (err) {
+      var c = errCode(err);
+      if (c === 'E_NOT_FOUND') { window.LAST_RES = { ok: false, code: 'E_NOT_FOUND' }; showResult(window.LAST_RES); }
+      else if (c === 'E_BUSY') toast(t('ts.busy'), 'warning');
+      else handleErr(err);
+    })
+    .then(function () { setBusy(btn, false); });
+  return false;
+}
+
+function resetStatus() {
+  window.LAST_RES = null;
+  $('resCard').hidden = true;
+  $('formCard').hidden = false;
+  $('fRef').value = '';
+  $('fMob').value = '';
+  ['f_ref', 'f_mob'].forEach(function (id) { mark(id, false); });
+}
+
+function fmtDay(iso) {
+  var m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+  if (!m) return '';
+  return m[3] + '/' + m[2] + '/' + m[1] + (m[4] ? ' ' + m[4] + ':' + m[5] : '');
+}
+
+function showResult(res) {
+  $('formCard').hidden = true;
+  $('resCard').hidden = false;
+  var ico = $('resIco'), steps = $('resSteps'), note = $('resNote');
+  steps.innerHTML = '';
+  note.hidden = true;
+
+  if (!res || !res.ok) {
+    ico.className = 'res-ico no';
+    ico.innerHTML = '<i class="bi bi-search" aria-hidden="true"></i>';
+    $('resTitle').textContent = t('ts.notFound');
+    $('resWho').textContent = t('ts.notFoundBody');
+    return;
+  }
+
+  var closed = res.closed && res.stage !== 'hired';
+  var hired = res.stage === 'hired';
+  ico.className = 'res-ico ' + (hired ? 'ok' : closed ? 'no' : 'wait');
+  ico.innerHTML = '<i class="bi ' + (hired ? 'bi-check-lg' : closed ? 'bi-archive' : 'bi-hourglass-split') + '" aria-hidden="true"></i>';
+
+  $('resTitle').textContent = hired ? t('ts.hired')
+    : closed ? t('ts.closed')
+    : res.contacted ? t('ts.inProgress')
+    : t('ts.received');
+  $('resWho').textContent = t('ts.job', { job: res.jobTitle, date: fmtDay(res.submittedAt) });
+
+  if (!closed) {
+    var cur = STEPS.indexOf(res.stage);
+    if (cur < 0) cur = 0;
+    STEPS.forEach(function (sg, i) {
+      if (i) {
+        var line = document.createElement('div');
+        line.className = 'stp-line';
+        steps.appendChild(line);
+      }
+      var row = document.createElement('div');
+      row.className = 'stp' + (i < cur ? ' done' : i === cur ? ' cur' : '');
+      row.innerHTML = '<span class="stp-dot"></span><span class="stp-txt"></span>';
+      row.children[0].innerHTML = i <= cur ? '<i class="bi bi-check" aria-hidden="true"></i>' : '';
+      row.children[1].textContent = t('ts.s_' + sg);
+      steps.appendChild(row);
+    });
+  }
+
+  var lines = [];
+  if (res.interviewDate) lines.push([t('ts.interviewAt'), fmtDay(res.interviewDate)]);
+  if (closed) lines.push(['', t('ts.closedNote')]);
+  else if (!res.contacted) lines.push(['', t('ts.waitCall')]);
+
+  if (lines.length) {
+    note.innerHTML = '';
+    lines.forEach(function (x) {
+      if (x[0]) {
+        var b = document.createElement('b');
+        b.textContent = x[0];
+        note.appendChild(b);
+      }
+      var p = document.createElement('div');
+      p.textContent = x[1];
+      note.appendChild(p);
+    });
+    note.hidden = false;
+  }
+}
+/* ============================================================
+   الشعار واسم الشركة من السيرفر (اختياري — الصفحة شغالة من غيرهم)
+   ============================================================ */
+(function loadBrand() {
+  if (/PASTE_YOUR/.test(API_URL)) {
+    console.error('API_URL لسه مش متظبط في أول الملف.');
+    return;
+  }
+  run('apply_options')
+    .then(function (res) {
+      var b = (res && res.boot) || {};
+      if (!b.brand) return;
+      BOOT.brand = b.brand;
+      applyBrand();
+      $('stCompany').textContent = b.brand.name || 'Cairo 3A';
+      $('stLegal').textContent = '© ' + new Date().getFullYear() + ' ' + (b.brand.name || 'Cairo 3A');
+    })
+    .catch(function () { /* الشعار مش ضروري — الصفحة شغالة عادي */ });
+})();
+
+</script>
+</body>
+</html>
