@@ -256,6 +256,10 @@ input[type="date"].input,input[type="datetime-local"].input{min-width:0;max-widt
 .ap-company{font-size:13px;font-weight:700;color:var(--on-navy-2)}
 .ap-head h1{font-size:25px;font-weight:800;color:var(--on-navy);line-height:1.25}
 .ap-sub{margin-top:14px;font-size:14px;color:var(--on-navy-2);max-width:52ch}
+.track-link{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:8px 15px;border-radius:99px;
+  border:1.5px solid rgba(255,255,255,.35);color:var(--on-navy);font-size:13.5px;font-weight:700;text-decoration:none;min-height:40px}
+.track-link:hover{background:rgba(255,255,255,.12)}
+.track-link i{font-size:15px}
 
 .ap-wrap{max-width:680px;margin:0 auto;padding:18px 12px 28px}
 .ap-card{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow)}
@@ -331,6 +335,7 @@ input[type="date"].input,input[type="datetime-local"].input{min-width:0;max-widt
       </div>
     </div>
     <p class="ap-sub" data-i18n="ap.intro"></p>
+    <a class="track-link" id="trackExisting" target="_top"><i class="bi bi-search" aria-hidden="true"></i><span data-i18n="ap.trackExisting">عندك طلب قديم؟ تابعه من هنا</span></a>
   </div>
 </header>
 
@@ -464,7 +469,7 @@ input[type="date"].input,input[type="datetime-local"].input{min-width:0;max-widt
    إعداد الاستضافة الخارجية (GitHub Pages)
    غيّر API_URL لرابط /exec بتاع الويب أب بتاعك.
    ============================================================ */
-var API_URL = 'https://script.google.com/macros/s/AKfycbzvU4hv-gZztL8iI_cO3zSvmyEv9F1bZmnxf6mAt6ai2jkVMFNT5c9WupPHtWJGvwEITw/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbzwKwwCekIc9TZGaCd7HW26D_aV2zjbNKQq9OAtVnbaCD8ojwsl_n0h55Xgtn8CRmV_Yw/exec';
 
 /* اسم ملف صفحة المتابعة جنب الملف ده */
 var STATUS_PAGE = 'status.html';
@@ -1121,6 +1126,7 @@ i18nAdd({
     'ap.refKeep': 'احتفظ بالرقم ده — هتحتاجه عشان تتابع طلبك.',
     'ap.again': 'التقديم على وظيفة تانية',
     'ap.track': 'متابعة طلبك',
+    'ap.trackExisting': 'عندك طلب قديم؟ تابعه من هنا',
     'ap.trackHint': 'تقدر تتابع طلبك في أي وقت برقم الطلب ورقم موبايلك.',
     'ap.closedTitle': 'مفيش وظائف متاحة دلوقتي',
     'ap.closedBody': 'ارجع للرابط ده لما {company} تعلن عن وظائف جديدة.',
@@ -1183,6 +1189,7 @@ i18nAdd({
     'ap.refKeep': 'Keep this number — you will need it to track your application.',
     'ap.again': 'Apply for another position',
     'ap.track': 'Track your application',
+    'ap.trackExisting': 'Already applied? Track it here',
     'ap.trackHint': 'You can track your application any time with this number and your mobile.',
     'ap.closedTitle': 'No open positions right now',
     'ap.closedBody': 'Come back to this link when {company} announces new positions.',
@@ -1287,6 +1294,8 @@ function initApply() {
     if (f) prepareCv(f);
   });
 
+  /* صفحة المتابعة الثابتة على نفس الموقع */
+  $('trackExisting').href = STATUS_PAGE;
   $('apForm').hidden = false;
 }
 
@@ -1586,7 +1595,6 @@ function fillDone(ref, mobile) {
   $('againLink').href = location.pathname + (BOOT.src ? '?src=' + encodeURIComponent(BOOT.src) : '');
   var track = $('trackLink');
   track.hidden = !ref;
-  /* صفحة المتابعة الثابتة جنب الملف ده على نفس الموقع */
   if (ref) track.href = STATUS_PAGE + '?ref=' + encodeURIComponent(ref);
 }
 /* ============================================================
