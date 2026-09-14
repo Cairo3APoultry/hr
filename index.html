@@ -488,7 +488,7 @@ var BOOT = {
   })(),
   pwdMin: 8,
   lockMinutes: 10,
-  brand: { name: 'Cairo 3A', logo: '' },
+  brand: { name: ' cairo3apoultry', logo: '' },
   apply: {}
 };
 
@@ -713,7 +713,7 @@ function t(key, vars) {
     min: BOOT.pwdMin || 8,
     minutes: BOOT.lockMinutes || 10,
     mb: (BOOT.apply && BOOT.apply.cvMaxMb) || 5,
-    company: (BOOT.brand && BOOT.brand.name) || 'Cairo 3A'
+    company: (BOOT.brand && BOOT.brand.name) || ' cairo3apoultry'
   };
   if (vars) Object.keys(vars).forEach(function (k) { v[k] = vars[k]; });
   return String(s).replace(/\{(\w+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; });
@@ -1254,7 +1254,7 @@ function updateAge() {
 applyI18n();
 
 function initApply() {
-  var company = (BOOT.brand && BOOT.brand.name) || 'Cairo 3A';
+  var company = (BOOT.brand && BOOT.brand.name) || ' cairo3apoultry';
   $('apCompany').textContent = company;
   $('apLegal').textContent = '© ' + new Date().getFullYear() + ' ' + company;
 
