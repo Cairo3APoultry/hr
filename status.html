@@ -294,7 +294,7 @@ input[type="date"].input,input[type="datetime-local"].input{min-width:0;max-widt
     <div class="st-brand">
       <div class="brand-mark" data-brand-logo></div>
       <div>
-        <div class="st-company" id="stCompany">Cairo 3A</div>
+        <div class="st-company" id="stCompany"> cairo3apoultry'</div>
         <h1 data-i18n="ts.title">متابعة طلبك</h1>
       </div>
     </div>
@@ -353,7 +353,7 @@ var BOOT = {
   src: '',
   pwdMin: 8,
   lockMinutes: 10,
-  brand: { name: 'Cairo 3A', logo: '' }
+  brand: { name: ' cairo3apoultry'', logo: '' }
 };
 
 /* جسر fetch بدل google.script.run — زي صفحة التقديم بالظبط */
@@ -573,7 +573,7 @@ function t(key, vars) {
     min: BOOT.pwdMin || 8,
     minutes: BOOT.lockMinutes || 10,
     mb: (BOOT.apply && BOOT.apply.cvMaxMb) || 5,
-    company: (BOOT.brand && BOOT.brand.name) || 'Cairo 3A'
+    company: (BOOT.brand && BOOT.brand.name) || ' cairo3apoultry''
   };
   if (vars) Object.keys(vars).forEach(function (k) { v[k] = vars[k]; });
   return String(s).replace(/\{(\w+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; });
@@ -998,7 +998,7 @@ applyI18n();
 var STEPS = ['new', 'screening', 'interview', 'offer', 'hired'];
 
 (function init() {
-  var company = (BOOT.brand && BOOT.brand.name) || 'Cairo 3A';
+  var company = (BOOT.brand && BOOT.brand.name) || ' cairo3apoultry'';
   $('stCompany').textContent = company;
   $('stLegal').textContent = '© ' + new Date().getFullYear() + ' ' + company;
   if (BOOT.ref) $('fRef').value = BOOT.ref;
@@ -1126,8 +1126,8 @@ function showResult(res) {
       if (!b.brand) return;
       BOOT.brand = b.brand;
       applyBrand();
-      $('stCompany').textContent = b.brand.name || 'Cairo 3A';
-      $('stLegal').textContent = '© ' + new Date().getFullYear() + ' ' + (b.brand.name || 'Cairo 3A');
+      $('stCompany').textContent = b.brand.name || ' cairo3apoultry'';
+      $('stLegal').textContent = '© ' + new Date().getFullYear() + ' ' + (b.brand.name || ' cairo3apoultry'');
     })
     .catch(function () { /* الشعار مش ضروري — الصفحة شغالة عادي */ });
 })();
