@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<script>
+/* يطبّق الثيم واللغة قبل الرسم — يمنع الوميض */
+(function () {
+  try {
+    var th = localStorage.getItem('HR_THEME');
+    if (th !== 'dark' && th !== 'light') {
+      th = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    var lg = localStorage.getItem('HR_LANG') === 'en' ? 'en' : 'ar';
+    var d = document.documentElement;
+    d.setAttribute('data-theme', th);
+    d.setAttribute('lang', lg);
+    d.setAttribute('dir', lg === 'en' ? 'ltr' : 'rtl');
+  } catch (e) {}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+/* ============================================================
+   Styles.html · الألوان كلها متغيرات — ممنوع ألوان ثابتة في style مضمّن
+   ============================================================ */
+:root{
+  --brand:#C4151C; --brand-dark:#9B1016; --brand-light:#FDEBEC; --brand-ink:#A3121A;
+  --navy:#1B2A47; --on-navy:#FFFFFF; --on-navy-2:#B9C6DA; --navy-hover:rgba(255,255,255,.1);
+  --card:#FFFFFF; --page:#F4F6FA; --page2:#F8FAFC;
+  --text:#1A2942; --text-2:#5B6B82; --text-3:#94A3B8;
+  --border:#E5E7EB; --border-strong:#CBD5E1;
+  --input-bg:#FFFFFF; --input-border:#D3D9E2;
+  --ok-bg:#DCFCE7; --ok-fg:#166534;
+  --warn-bg:#FFFBEB; --warn-fg:#92400E;
+  --bad-bg:#FEE2E2; --bad-fg:#991B1B;
+  --info-bg:#EFF6FF; --info-fg:#1E40AF;
+  --star:#D97706; --star-off:#94A3B8;
+  --err:#DC2626; --ok:#16A34A; --warn:#D97706; --info:#2E6FD9;
+  --overlay:rgba(10,15,25,.55);
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 10px 28px rgba(16,24,40,.07);
+  --focus-border:#1B2A47; --focus:0 0 0 3px rgba(27,42,71,.16);
+  --radius:12px;
+  color-scheme:light;
+}
+[data-theme="dark"]{
+  --brand-light:rgba(196,21,28,.18); --brand-ink:#FF9499;
+  --navy:#131D31; --on-navy-2:#A9B6CB;
+  --card:#1A2233; --page:#0F1420; --page2:#131B2A;
+  --text:#E8EDF4; --text-2:#9AA7BC; --text-3:#6B7A92;
+  --border:#2A3547; --border-strong:#3A475C;
+  --input-bg:#131B2A; --input-border:#344157;
+  --ok-bg:rgba(34,197,94,.16); --ok-fg:#86EFAC;
+  --warn-bg:rgba(245,158,11,.16); --warn-fg:#FCD34D;
+  --bad-bg:rgba(239,68,68,.15); --bad-fg:#FCA5A5;
+  --info-bg:rgba(96,165,250,.15); --info-fg:#93C5FD;
+  --star:#FBBF24; --star-off:#6B7A92;
+  --err:#F87171; --ok:#4ADE80; --warn:#FBBF24; --info:#60A5FA;
+  --overlay:rgba(0,0,0,.65);
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.35);
+  --focus-border:#8EA8D6; --focus:0 0 0 3px rgba(142,168,214,.25);
+  color-scheme:dark;
+}
+
+/* ---------- الأساس ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:var(--page);color:var(--text);
+  font-family:"Cairo",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+  font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;line-height:1.3;color:var(--text)}
+p{margin:0}
+a{color:var(--brand-ink)}
+button,input,select,textarea{font:inherit}
+:focus-visible{outline:2px solid var(--focus-border);outline-offset:2px}
+[hidden]{display:none!important}
+.muted{color:var(--text-2)}
+.small{font-size:13px}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* ---------- الأزرار ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;
+  padding:10px 18px;border-radius:var(--radius);border:1.5px solid transparent;
+  font-weight:700;font-size:15px;cursor:pointer;text-decoration:none;white-space:nowrap;
+  transition:background-color .15s,border-color .15s}
+.btn:disabled,.btn[aria-busy="true"]{opacity:.7;cursor:not-allowed}
+.btn-primary{background:var(--brand);color:#FFFFFF}
+.btn-primary:hover:not(:disabled){background:var(--brand-dark)}
+.btn-ghost{background:transparent;border-color:var(--border-strong);color:var(--text)}
+.btn-ghost:hover:not(:disabled){border-color:var(--text-3)}
+.btn-block{width:100%}
+.btn-link{background:none;border:none;color:var(--brand-ink);font-weight:700;padding:6px 4px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.icon-btn{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:10px;border:none;background:transparent;color:var(--text);cursor:pointer;font-size:18px}
+.icon-btn:hover{background:var(--page2)}
+.lang-code{font-size:13px;font-weight:800;letter-spacing:.3px}
+.spin{display:inline-block;animation:spin .8s linear infinite}
+
+/* ---------- الحقول ---------- */
+.field{margin-bottom:16px}
+.lbl{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.control{position:relative}
+.input{width:100%;min-height:48px;padding:11px 14px;border:1.5px solid var(--input-border);
+  border-radius:var(--radius);background:var(--input-bg);color:var(--text);
+  font-size:16px;line-height:1.4;transition:border-color .15s,box-shadow .15s}
+.input::placeholder{color:var(--text-3);opacity:1}
+.input:focus{outline:none;border-color:var(--focus-border);box-shadow:var(--focus)}
+.input.has-icon{padding-inline-start:42px}
+.input.has-reveal{padding-inline-end:50px}
+.control>.ico{position:absolute;inset-inline-start:14px;top:50%;transform:translateY(-50%);
+  color:var(--text-3);font-size:17px;pointer-events:none;line-height:1}
+.control>.reveal{position:absolute;inset-inline-end:5px;top:50%;transform:translateY(-50%);
+  width:40px;height:40px;border:none;background:transparent;color:var(--text-2);
+  border-radius:9px;cursor:pointer;font-size:17px}
+.control>.reveal:hover{background:var(--page2)}
+.field.invalid .input,.field.invalid .input:focus{border-color:var(--err);background:var(--bad-bg)}
+.field.invalid .input:focus{box-shadow:0 0 0 3px rgba(220,38,38,.16)}
+.field.invalid .ico{color:var(--err)}
+.err-msg{display:none;color:var(--err);font-size:12.5px;font-weight:600;margin-top:5px}
+.field.invalid .err-msg{display:block}
+.hint{font-size:12.5px;color:var(--text-2);margin-top:5px}
+textarea.input{min-height:100px;resize:vertical;line-height:1.6}
+select.input{cursor:pointer}
+/* أرقام وإيميلات: اتجاه LTR عشان ترتيب المجموعات مايتقلبش، مع محاذاة الصفحة */
+.input.ltr{direction:ltr;text-align:right}
+input[type="date"].input,input[type="datetime-local"].input{min-width:0;max-width:100%}
+[dir="ltr"] .input.ltr{text-align:left}
+.opt{font-weight:600;font-size:12px;color:var(--text-3);margin-inline-start:6px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* فخ البوتات — مخفي بالقص مش بـ left:-9999px (اللي بيعمل سكرول عرضي في RTL) */
+.hp{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);opacity:0;pointer-events:none}
+.field.invalid .hint{display:none}
+
+/* ---------- الشعار على خلفية كحلية ---------- */
+.brand-mark{width:60px;height:60px;border-radius:14px;background:#FFFFFF;color:#C4151C;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:28px;flex-shrink:0}
+.brand-mark img{width:82%;height:82%;object-fit:contain}
+
+/* ---------- البطاقات والشارات ---------- */
+.container{max-width:1200px;margin:0 auto;padding:16px 12px 40px}
+.card{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
+.card-pad{padding:18px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;
+  font-size:12px;font-weight:700;background:var(--page2);color:var(--text-2);border:1px solid var(--border)}
+.badge-brand{background:var(--brand-light);color:var(--brand-ink);border-color:transparent}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--brand);color:#FFFFFF;
+  display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+@media (min-width:760px){.container{padding:24px 20px 48px}.card-pad{padding:22px}}
+
+/* ---------- حالات المكالمة (مشتركة: اللوحة · الإدارة · التقارير) ---------- */
+.st{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;border:1px solid transparent;line-height:1.7}
+.st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.st-pending{background:var(--page2);color:var(--text-2);border-color:var(--border)}
+.st-done{background:var(--ok-bg);color:var(--ok-fg)}
+.st-no_answer{background:var(--warn-bg);color:var(--warn-fg)}
+.st-postponed{background:var(--info-bg);color:var(--info-fg)}
+.st-rejected{background:var(--bad-bg);color:var(--bad-fg)}
+.ltr-text{direction:ltr;unicode-bidi:isolate}
+
+/* ---------- الشريط العلوي ---------- */
+.topbar{background:var(--navy);color:var(--on-navy);border-bottom:3px solid var(--brand);position:sticky;top:0;z-index:50}
+.tb-inner{max-width:1200px;margin:0 auto;padding:8px 12px 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tb-brand{display:flex;align-items:center;gap:10px;color:var(--on-navy);text-decoration:none;font-weight:800;font-size:16px;margin-inline-end:auto;min-width:0}
+.tb-logo{width:34px;height:34px;border-radius:9px;background:#FFFFFF;color:#C4151C;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:17px}
+.tb-logo img{width:84%;height:84%;object-fit:contain}
+.tb-actions{display:flex;align-items:center;gap:2px}
+.tb-actions .icon-btn{color:var(--on-navy)}
+.tb-actions .icon-btn:hover{background:var(--navy-hover)}
+.tb-nav{order:3;width:100%;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tb-nav::-webkit-scrollbar{display:none}
+.tb-nav a{display:inline-flex;align-items:center;gap:7px;color:var(--on-navy-2);text-decoration:none;
+  font-weight:700;font-size:14px;padding:7px 12px;border-radius:8px;white-space:nowrap}
+.tb-nav a:hover{color:var(--on-navy);background:var(--navy-hover)}
+.tb-nav a[aria-current="page"]{color:var(--on-navy);background:rgba(255,255,255,.14)}
+.tb-user{position:relative;margin-inline-start:4px}
+.tb-user-btn{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.16);color:var(--on-navy);border-radius:10px;
+  padding-block:4px;padding-inline:4px 8px;cursor:pointer}
+.tb-user-btn:hover{background:rgba(255,255,255,.14)}
+.tb-user-meta{display:none;flex-direction:column;text-align:start;line-height:1.25}
+.tb-user-name{font-size:13px;font-weight:700;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-user-role{font-size:11px;color:var(--on-navy-2)}
+.tb-caret{font-size:11px;color:var(--on-navy-2)}
+@media (min-width:760px){
+  .tb-inner{padding:6px 20px;gap:12px}
+  .tb-brand{margin-inline-end:10px}
+  .tb-nav{order:0;width:auto}
+  .tb-actions{margin-inline-start:auto}
+  .tb-user-meta{display:flex}
+}
+
+/* ---------- القائمة المنسدلة ---------- */
+.menu-pop{position:absolute;inset-inline-end:0;top:calc(100% + 8px);min-width:230px;background:var(--card);
+  color:var(--text);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:none;z-index:60}
+.menu-pop.open{display:block}
+.menu-head{padding:8px 10px 10px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.menu-name{font-weight:800;font-size:14px}
+.menu-sub{font-size:12.5px;color:var(--text-2)}
+.menu-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border:none;background:none;
+  border-radius:8px;color:var(--text);font-weight:600;font-size:14px;cursor:pointer;text-align:start}
+.menu-item:hover{background:var(--page2)}
+.menu-item.danger{color:var(--bad-fg)}
+
+/* ---------- النوافذ (Bottom sheet على الموبايل) ---------- */
+.modal{position:fixed;inset:0;z-index:1000;display:none;align-items:flex-end;justify-content:center;background:var(--overlay)}
+.modal.open{display:flex}
+.modal-box{width:100%;max-width:460px;background:var(--card);color:var(--text);border-radius:18px 18px 0 0;
+  box-shadow:var(--shadow);max-height:92vh;overflow:auto}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 14px 18px;border-bottom:1px solid var(--border)}
+.modal-head h2{font-size:17px;font-weight:800}
+.modal-body{padding:18px}
+.form-actions{display:flex;gap:10px;margin-top:8px}
+.form-actions .btn{flex:1}
+@media (min-width:600px){.modal{align-items:center;padding:16px}.modal-box{border-radius:16px}}
+
+/* ---------- التنبيهات ---------- */
+#toastBox{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;width:calc(100% - 28px);
+  max-width:420px;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;display:flex;align-items:flex-start;gap:10px;background:var(--card);color:var(--text);
+  border:1px solid var(--border);border-inline-start:4px solid var(--info);border-radius:11px;
+  padding:12px 14px;font-size:14px;font-weight:600;box-shadow:var(--shadow);transition:opacity .3s}
+.toast.hide{opacity:0}
+.toast i{font-size:17px;line-height:1.4;color:var(--info)}
+.toast-success{border-inline-start-color:var(--ok)}.toast-success i{color:var(--ok)}
+.toast-error{border-inline-start-color:var(--err)}.toast-error i{color:var(--err)}
+.toast-warning{border-inline-start-color:var(--warn)}.toast-warning i{color:var(--warn)}
+
+/* ---------- التحميل · الحجب · المتابعة ---------- */
+#preload{position:fixed;inset:0;z-index:3000;background:var(--page);display:flex;align-items:center;justify-content:center}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--brand);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.blocker{position:fixed;inset:0;z-index:2000;background:var(--page);display:flex;align-items:center;justify-content:center;padding:20px}
+.blocker-card{max-width:380px;width:100%;text-align:center;background:var(--card);color:var(--text);
+  border:1px solid var(--border);border-radius:16px;padding:28px 22px;box-shadow:var(--shadow)}
+.blocker-ico{width:62px;height:62px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;
+  font-size:27px;background:var(--brand-light);color:var(--brand-ink)}
+.blocker-card h2{font-size:19px;font-weight:800;margin-bottom:6px}
+.blocker-card p{margin-bottom:20px}
+.continue-bar{position:fixed;left:12px;right:12px;bottom:12px;z-index:2500;max-width:520px;margin:0 auto;
+  display:flex;align-items:center;gap:12px;background:var(--card);color:var(--text);
+  border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:10px 10px 10px 14px}
+.continue-bar span{flex:1;font-size:13.5px;font-weight:600}
+</style>
+
+<style>
+.ex-head{background:var(--navy);color:var(--on-navy);border-bottom:5px solid var(--brand)}
+.ex-inner{max-width:640px;margin:0 auto;padding:10px 14px 22px}
+.ex-tools{display:flex;justify-content:flex-end;gap:2px}
+.ex-tools .icon-btn{color:var(--on-navy)}
+.ex-tools .icon-btn:hover{background:var(--navy-hover)}
+.ex-brand{display:flex;align-items:center;gap:14px;margin-top:2px}
+.ex-company{font-size:13px;font-weight:700;color:var(--on-navy-2)}
+.ex-head h1{font-size:23px;font-weight:800;color:var(--on-navy);line-height:1.3}
+.ex-wrap{max-width:640px;margin:0 auto;padding:16px 12px 34px}
+.ex-card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:18px;margin-bottom:12px}
+.ex-intro{font-size:14px;color:var(--text-2);line-height:1.85;margin-bottom:14px;white-space:pre-line}
+
+/* خطوات */
+.steps{display:flex;align-items:center;gap:6px;margin-bottom:14px}
+.step{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--text-3)}
+.step i{width:24px;height:24px;border-radius:50%;border:2px solid var(--border-strong);display:flex;align-items:center;
+  justify-content:center;font-style:normal;font-size:11.5px;background:var(--card)}
+.step.on{color:var(--text)} .step.on i{border-color:var(--brand);background:var(--brand);color:#fff}
+.step.done{color:var(--text-2)} .step.done i{border-color:var(--ok);background:var(--ok);color:#fff}
+.step-line{flex:1;height:2px;background:var(--border);min-width:12px}
+
+/* الموظف */
+.who{display:flex;gap:12px;align-items:center;background:var(--page2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:16px}
+.who-ava{width:46px;height:46px;border-radius:50%;background:var(--navy);color:var(--on-navy);display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:17px;flex:0 0 auto}
+.who b{display:block;font-size:16px;font-weight:800}
+.who span{display:block;font-size:12.5px;color:var(--text-2);line-height:1.6}
+
+/* الأسباب */
+.q{margin-top:18px}
+.q:first-of-type{margin-top:0}
+.q-title{font-size:15px;font-weight:800;margin-bottom:3px}
+.q-sub{font-size:12.5px;color:var(--text-2);margin-bottom:10px}
+.cat{margin-bottom:12px}
+.cat-name{font-size:12px;font-weight:800;color:var(--text-3);letter-spacing:.2px;margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{position:relative;display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--border-strong);background:var(--card);
+  border-radius:12px;padding:9px 12px;font:inherit;font-size:13.5px;font-weight:600;color:var(--text);cursor:pointer;text-align:start;
+  min-height:42px;line-height:1.4;transition:background .15s,border-color .15s}
+.chip:hover{border-color:var(--text-3)}
+.chip .box{width:18px;height:18px;border-radius:5px;border:2px solid var(--border-strong);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+.chip[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-light)}
+.chip[aria-pressed="true"] .box{background:var(--brand);border-color:var(--brand)}
+.chip[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.counter{font-size:12.5px;font-weight:700;color:var(--text-2);margin-top:4px}
+.counter.full{color:var(--brand-ink)}
+
+.prim{display:flex;flex-direction:column;gap:6px}
+.prim label{display:flex;align-items:center;gap:10px;border:1.5px solid var(--border);border-radius:11px;padding:10px 12px;cursor:pointer;font-size:14px;font-weight:600}
+.prim input{accent-color:var(--brand);width:18px;height:18px}
+.prim label:has(input:checked){border-color:var(--brand);background:var(--brand-light)}
+
+/* مقياس 0-10 */
+.scale{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:4px}
+.scale button{border:1.5px solid var(--border-strong);background:var(--card);border-radius:9px;min-height:42px;font:inherit;font-weight:800;
+  font-size:14px;color:var(--text);cursor:pointer;padding:0}
+.scale button[aria-pressed="true"]{color:#fff;border-color:transparent}
+.scale button.d[aria-pressed="true"]{background:#DC2626}
+.scale button.p[aria-pressed="true"]{background:#D97706}
+.scale button.g[aria-pressed="true"]{background:#16A34A}
+.scale-ends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-3);margin-top:5px}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.seg button{border:1.5px solid var(--border-strong);background:var(--card);border-radius:11px;min-height:46px;font:inherit;font-weight:700;
+  font-size:14px;color:var(--text);cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--navy);background:var(--navy);color:var(--on-navy)}
+[data-theme="dark"] .seg button[aria-pressed="true"]{background:var(--text);color:var(--page);border-color:var(--text)}
+textarea.input{min-height:110px;resize:vertical;line-height:1.7}
+.chars{font-size:11.5px;color:var(--text-3);text-align:end;margin-top:4px}
+.q.invalid .q-title{color:var(--err)}
+.q .err-msg{display:none;color:var(--err);font-size:12.5px;font-weight:700;margin-top:6px}
+.q.invalid .err-msg{display:block}
+.secure{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--text-3);margin-top:12px;line-height:1.7}
+
+/* نتيجة */
+.res{text-align:center;padding:10px 0 4px}
+.res-ico{width:78px;height:78px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:36px}
+.res-ico.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.res-ico.off{background:var(--page2);color:var(--text-2)}
+.res h2{font-size:21px;font-weight:800;margin-bottom:8px}
+.res p{font-size:14.5px;color:var(--text-2);line-height:1.85;white-space:pre-line}
+.ref{display:inline-block;margin-top:14px;background:var(--page2);border:1px dashed var(--border-strong);border-radius:10px;padding:8px 14px;
+  font-weight:800;direction:ltr;unicode-bidi:isolate}
+.ex-legal{text-align:center;font-size:12px;color:var(--text-3);padding-top:10px}
+.alert{display:none;background:var(--bad-bg);color:var(--bad-fg);border-radius:10px;padding:10px 12px;font-size:13.5px;font-weight:700;margin-bottom:12px;line-height:1.7}
+.alert.show{display:block}
+.alert.warn{background:var(--warn-bg);color:var(--warn-fg)}
+@media (min-width:600px){.ex-inner{padding:14px 20px 30px}.ex-head h1{font-size:28px}.ex-card{padding:22px}}
+@media (max-width:380px){.scale{grid-template-columns:repeat(6,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<div id="toastBox" role="status" aria-live="polite"></div>
+
+<header class="ex-head">
+  <div class="ex-inner">
+    <div class="ex-tools">
+      <button type="button" class="icon-btn" onclick="toggleLang()" data-i18n-label="ui.lang"><span class="lang-code" data-lang-code>EN</span></button>
+      <button type="button" class="icon-btn" onclick="toggleTheme()" data-i18n-label="ui.theme"><i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i></button>
+    </div>
+    <div class="ex-brand">
+      <div class="brand-mark" data-brand-logo></div>
+      <div>
+        <div class="ex-company" id="exCompany">Cairo 3A</div>
+        <h1 id="exTitle">استبيان ترك العمل</h1>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="ex-wrap">
+  <div class="steps" id="steps" aria-hidden="true">
+    <div class="step on" data-s="1"><i>1</i><span data-i18n="ex.s1">بياناتك</span></div><div class="step-line"></div>
+    <div class="step" data-s="2"><i>2</i><span data-i18n="ex.s2">الأسباب</span></div><div class="step-line"></div>
+    <div class="step" data-s="3"><i>3</i><span data-i18n="ex.s3">تم</span></div>
+  </div>
+
+  <!-- 1) التحقق -->
+  <section class="ex-card" id="cardVerify" hidden>
+    <p class="ex-intro" id="exIntro"></p>
+    <div class="alert" id="vAlert" role="alert"></div>
+    <form id="vForm" novalidate>
+      <div class="field" id="f_emp">
+        <label class="lbl" for="fEmp" data-i18n="ex.empId">الكود الوظيفي</label>
+        <input class="input ltr" id="fEmp" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="100245">
+        <div class="err-msg" data-i18n="ex.empIdReq"></div>
+      </div>
+      <div class="field" id="f_code">
+        <label class="lbl" for="fCode" id="codeLbl"></label>
+        <input class="input ltr" id="fCode" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="••••">
+        <div class="hint" id="codeHint"></div>
+        <div class="err-msg" data-i18n="ex.codeReq"></div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="vBtn"><span data-i18n="ex.next">متابعة</span></button>
+    </form>
+    <div class="secure"><i class="bi bi-shield-lock" aria-hidden="true"></i><span data-i18n="ex.secure"></span></div>
+  </section>
+
+  <!-- 2) الأسباب -->
+  <section class="ex-card" id="cardForm" hidden>
+    <div class="who">
+      <div class="who-ava" id="whoAva"></div>
+      <div><b id="whoName"></b><span id="whoMeta"></span></div>
+    </div>
+    <div class="alert" id="fAlert" role="alert"></div>
+    <form id="sForm" novalidate>
+      <input type="text" class="hp" name="website" id="fWeb" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <div class="q" id="q_reasons">
+        <div class="q-title" data-i18n="ex.qReasons">إيه أسباب تركك للشغل؟</div>
+        <div class="q-sub" id="reasonsSub"></div>
+        <div id="reasonBox"></div>
+        <div class="counter" id="reasonCount"></div>
+        <div class="err-msg" id="reasonsErr" data-i18n="ex.reasonsReq"></div>
+      </div>
+
+      <div class="q" id="q_primary" hidden>
+        <div class="q-title" data-i18n="ex.qPrimary">أهم سبب فيهم؟</div>
+        <div class="prim" id="primBox" role="radiogroup"></div>
+        <div class="err-msg" data-i18n="ex.primaryReq"></div>
+      </div>
+
+      <div class="q" id="q_notes">
+        <div class="q-title" id="notesTitle"></div>
+        <div class="q-sub" data-i18n="ex.notesSub"></div>
+        <textarea class="input" id="fNotes" maxlength="1500"></textarea>
+        <div class="chars"><span id="noteChars">0</span> / 1500</div>
+        <div class="err-msg" data-i18n="ex.notesReq"></div>
+      </div>
+
+      <div class="q" id="q_recommend" hidden>
+        <div class="q-title" data-i18n="ex.qRecommend">لو حد من معارفك بيدوّر على شغل، قد إيه هترشّحله الشركة؟</div>
+        <div class="q-sub" data-i18n="ex.recommendSub">0 = مستبعد تمامًا · 10 = أكيد هرشّحها</div>
+        <div class="scale" id="scale" role="radiogroup"></div>
+        <div class="scale-ends"><span data-i18n="ex.no0">مستبعد</span><span data-i18n="ex.yes10">أكيد</span></div>
+        <div class="err-msg" data-i18n="ex.recommendReq"></div>
+      </div>
+
+      <div class="q" id="q_return" hidden>
+        <div class="q-title" data-i18n="ex.qReturn">لو الظروف اتغيّرت، ممكن ترجع تشتغل معانا؟</div>
+        <div class="seg" id="retBox" role="radiogroup">
+          <button type="button" data-v="yes" aria-pressed="false"><span data-i18n="ex.rYes">أيوه</span></button>
+          <button type="button" data-v="maybe" aria-pressed="false"><span data-i18n="ex.rMaybe">ممكن</span></button>
+          <button type="button" data-v="no" aria-pressed="false"><span data-i18n="ex.rNo">لأ</span></button>
+        </div>
+        <div class="err-msg" data-i18n="ex.returnReq"></div>
+      </div>
+
+      <div class="q" id="q_last">
+        <label class="q-title" for="fLast" data-i18n="ex.qLast">آخر يوم شغل (اختياري)</label>
+        <input class="input" type="date" id="fLast" style="max-width:240px;margin-top:6px">
+        <div class="err-msg" data-i18n="ex.lastBad"></div>
+      </div>
+
+      <div class="form-actions" style="margin-top:20px">
+        <button type="button" class="btn btn-ghost" id="backBtn"><span data-i18n="ex.back">رجوع</span></button>
+        <button type="submit" class="btn btn-primary" id="sBtn" style="flex:1"><span data-i18n="ex.send">إرسال</span></button>
+      </div>
+    </form>
+  </section>
+
+  <!-- 3) النتيجة / مقفول -->
+  <section class="ex-card res" id="cardDone" hidden>
+    <div class="res-ico ok" id="doneIco"><i class="bi bi-check2-circle" aria-hidden="true"></i></div>
+    <h2 id="doneTitle" data-i18n="ex.thanksTitle">وصلنا ردّك</h2>
+    <p id="doneText"></p>
+    <div class="ref" id="doneRef" hidden></div>
+  </section>
+
+  <footer class="ex-legal" id="exLegal" dir="ltr"></footer>
+</main>
+
+<script>
+/* ============================================================
+   إعداد الاستضافة الخارجية (GitHub Pages)
+   حط نفس API_URL الموجود في index.html (رابط /exec بتاع الويب أب)
+   ============================================================ */
+var API_URL = 'PASTE_YOUR_WEB_APP_EXEC_URL_HERE';
+
+var BOOT = {
+  baseUrl: API_URL,
+  page: 'exit',
+  pages: ['exit'],
+  src: '',
+  pwdMin: 8,
+  lockMinutes: 10,
+  brand: { name: 'Cairo 3A', logo: '' }
+};
+
+/* جسر fetch بدل google.script.run — Content-Type نص عادي عشان مايحصلش preflight */
+(function () {
+  function call(action, payload) {
+    return fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: action, payload: payload || {} })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('E_NETWORK');
+      return r.json();
+    }).catch(function () {
+      var err = new Error('E_NETWORK'); err.code = 'E_NETWORK';
+      throw err;
+    });
+  }
+  function runner(onOk, onFail) {
+    var api = {
+      withSuccessHandler: function (cb) { return runner(cb, onFail); },
+      withFailureHandler: function (cb) { return runner(onOk, cb); }
+    };
+    ['exit_config', 'exit_verify', 'exit_submit'].forEach(function (name) {
+      api[name] = function (payload) {
+        call(name, payload).then(
+          function (res) { if (onOk) onOk(res); },
+          function (err) { if (onFail) onFail(err); }
+        );
+      };
+    });
+    return api;
+  }
+  window.google = { script: { run: runner(null, null) } };
+})();
+
+/* الإعدادات والأسباب من السيرفر */
+function loadExitConfig() {
+  if (/PASTE_YOUR/.test(API_URL)) {
+    console.error('API_URL لسه مش متظبط في أول الملف.');
+    startExit({ ok: false });
+    return;
+  }
+  run('exit_config')
+    .then(function (cfg) { startExit(cfg); })
+    .catch(function () { startExit({ ok: false }); });
+}
+</script>
+<script>
+/* ============================================================
+   Client.html · أدوات الواجهة المشتركة
+   يتضمَّن في آخر body بعد سطر تعريف BOOT
+   ============================================================ */
+if (typeof BOOT === 'undefined') window.BOOT = {};
+
+var KEYS = { token: 'HR_TOKEN', user: 'HR_USER', theme: 'HR_THEME', lang: 'HR_LANG' };
+var ME = null;
+var _MEM_ = {};
+
+/* ---------- تخزين محلي (مع بديل في الذاكرة لو اتمنع) ---------- */
+function store(k, v) {
+  try {
+    if (v === undefined) return localStorage.getItem(k);
+    if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, String(v));
+  } catch (e) {
+    if (v === undefined) return Object.prototype.hasOwnProperty.call(_MEM_, k) ? _MEM_[k] : null;
+    if (v === null) delete _MEM_[k]; else _MEM_[k] = String(v);
+  }
+  return null;
+}
+
+function $(id) { return document.getElementById(id); }
+
+/** ٠١٢ و ۰۱۲ → 012 */
+function normDigits(s) {
+  return String(s == null ? '' : s)
+    .replace(/[\u0660-\u0669]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
+    .replace(/[\u06F0-\u06F9]/g, function (c) { return String(c.charCodeAt(0) - 0x06F0); });
+}
+
+/** +20 101 234 5678 · ٠١٠... → 01012345678 (نفس منطق السيرفر) */
+function normMobile(s) {
+  var d = normDigits(s).replace(/\D/g, '');
+  if (d.indexOf('0020') === 0) d = d.slice(4);
+  else if (d.indexOf('20') === 0 && d.length === 12) d = d.slice(2);
+  if (d.length === 10 && d.charAt(0) === '1') d = '0' + d;
+  return d;
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+
+/* ============================================================
+   اللغة
+   ============================================================ */
+var LANG = store(KEYS.lang) === 'en' ? 'en' : 'ar';
+
+var I18N = {
+  ar: {
+    'app.name': 'نظام التوظيف',
+    'app.tagline': 'استقبال طلبات التوظيف، توزيعها على فريق الموارد البشرية، ومتابعة كل مكالمة.',
+    'ui.lang': 'التبديل إلى English',
+    'ui.theme': 'تبديل المظهر',
+    'ui.close': 'إغلاق',
+    'ui.cancel': 'إلغاء',
+    'ui.continue': 'متابعة',
+    'ui.retry': 'إعادة المحاولة',
+    'ui.showPwd': 'إظهار كلمة المرور',
+    'ui.tapContinue': 'لو الصفحة ماتفتحتش لوحدها، اضغط متابعة.',
+    'ui.excel': 'Excel', 'ui.pdf': 'PDF',
+    'nav.home': 'الرئيسية',
+    'nav.reports': 'التقارير',
+    'nav.admin': 'الإدارة',
+    'nav.workforce': 'القوى العاملة',
+    'nav.exits': 'ترك العمل',
+    'role.ADMIN': 'مسؤول النظام',
+    'role.HR': 'موظف موارد بشرية',
+    'tb.menu': 'قائمة الحساب',
+    'tb.changePwd': 'تغيير كلمة المرور',
+    'tb.logout': 'تسجيل الخروج',
+    'cp.title': 'تغيير كلمة المرور',
+    'cp.cur': 'كلمة المرور الحالية',
+    'cp.new': 'كلمة المرور الجديدة',
+    'cp.conf': 'تأكيد كلمة المرور الجديدة',
+    'cp.hint': '{min} أحرف على الأقل',
+    'cp.curReq': 'اكتب كلمة المرور الحالية',
+    'cp.newReq': 'كلمة المرور لازم تكون {min} أحرف على الأقل',
+    'cp.mismatch': 'التأكيد مش مطابق لكلمة المرور الجديدة',
+    'cp.save': 'حفظ كلمة المرور',
+    'cp.saving': 'جارٍ الحفظ...',
+    'cp.done': 'تم تغيير كلمة المرور، واتقفلت أي جلسة تانية لحسابك.',
+    'auth.expiredTitle': 'انتهت الجلسة',
+    'auth.expiredBody': 'سجّل الدخول مرة تانية عشان تكمل.',
+    'auth.toLogin': 'تسجيل الدخول',
+    'auth.forbiddenTitle': 'الصفحة دي لمسؤول النظام',
+    'auth.forbiddenBody': 'حسابك مايسمحش بفتحها.',
+    'auth.toHome': 'الرجوع للرئيسية',
+    'auth.errorTitle': 'تعذّر تحميل الصفحة',
+    'err.E_BAD_CREDS': 'اسم المستخدم أو كلمة المرور غير صحيحة',
+    'err.E_LOCKED': 'محاولات خاطئة كتير. جرّب تاني بعد {minutes} دقايق.',
+    'err.E_INACTIVE': 'الحساب ده موقوف. كلّم مسؤول النظام.',
+    'err.E_AUTH': 'انتهت الجلسة. سجّل الدخول تاني.',
+    'err.E_FORBIDDEN': 'حسابك مايسمحش بالعملية دي.',
+    'err.E_BUSY': 'النظام بيحفظ طلب تاني دلوقتي. جرّب بعد ثواني.',
+    'err.E_WEAK_PWD': 'كلمة المرور لازم تكون {min} أحرف على الأقل.',
+    'err.E_BAD_OLD_PWD': 'كلمة المرور الحالية غير صحيحة.',
+    'err.E_VALIDATION': 'فيه بيانات ناقصة أو غير صحيحة.',
+    'err.E_EXISTS': 'اسم المستخدم ده مستخدم قبل كده.',
+    'err.E_NOT_FOUND': 'العنصر مش موجود. حدّث الصفحة.',
+    'err.E_SELF': 'مينفعش تشيل صلاحية الأدمن من حسابك أو توقفه.',
+    'err.E_LAST_ADMIN': 'لازم يفضل حساب أدمن واحد نشط على الأقل.',
+    'err.E_CONFIG': 'إعداد النظام ناقص. شغّل hr_setup من المحرر.',
+    'err.E_NETWORK': 'مفيش اتصال بالسيرفر. اتأكد من الإنترنت وجرّب تاني.',
+    'err.E_NO_GAS': 'افتح الصفحة من رابط النظام.',
+    'err.E_NO_FN': 'النسخة المنشورة ناقصة ملفات. انشر نسخة جديدة من Deploy.',
+    'err.E_UNKNOWN': 'حصل خطأ غير متوقع.'
+  },
+  en: {
+    'app.name': 'Recruitment System',
+    'app.tagline': 'Receive job applications, assign them to the HR team, and track every call.',
+    'ui.lang': 'التبديل إلى العربية',
+    'ui.theme': 'Toggle theme',
+    'ui.close': 'Close',
+    'ui.cancel': 'Cancel',
+    'ui.continue': 'Continue',
+    'ui.retry': 'Try again',
+    'ui.showPwd': 'Show password',
+    'ui.tapContinue': "If the page didn't open, tap Continue.",
+    'ui.excel': 'Excel', 'ui.pdf': 'PDF',
+    'nav.home': 'Home',
+    'nav.reports': 'Reports',
+    'nav.admin': 'Admin',
+    'nav.workforce': 'Workforce',
+    'nav.exits': 'Exit surveys',
+    'role.ADMIN': 'System admin',
+    'role.HR': 'HR staff',
+    'tb.menu': 'Account menu',
+    'tb.changePwd': 'Change password',
+    'tb.logout': 'Sign out',
+    'cp.title': 'Change password',
+    'cp.cur': 'Current password',
+    'cp.new': 'New password',
+    'cp.conf': 'Confirm new password',
+    'cp.hint': 'At least {min} characters',
+    'cp.curReq': 'Enter your current password',
+    'cp.newReq': 'Password must be at least {min} characters',
+    'cp.mismatch': "Confirmation doesn't match the new password",
+    'cp.save': 'Save password',
+    'cp.saving': 'Saving…',
+    'cp.done': 'Password changed. Your other sessions were signed out.',
+    'auth.expiredTitle': 'Session expired',
+    'auth.expiredBody': 'Sign in again to continue.',
+    'auth.toLogin': 'Sign in',
+    'auth.forbiddenTitle': 'This page is for admins',
+    'auth.forbiddenBody': "Your account can't open it.",
+    'auth.toHome': 'Back to home',
+    'auth.errorTitle': "Couldn't load the page",
+    'err.E_BAD_CREDS': 'Wrong username or password',
+    'err.E_LOCKED': 'Too many failed attempts. Try again in {minutes} minutes.',
+    'err.E_INACTIVE': 'This account is disabled. Contact your admin.',
+    'err.E_AUTH': 'Session expired. Sign in again.',
+    'err.E_FORBIDDEN': "Your account can't do this.",
+    'err.E_BUSY': 'The system is saving another request. Try again in a few seconds.',
+    'err.E_WEAK_PWD': 'Password must be at least {min} characters.',
+    'err.E_BAD_OLD_PWD': 'Current password is incorrect.',
+    'err.E_VALIDATION': 'Some data is missing or invalid.',
+    'err.E_EXISTS': 'That username is already taken.',
+    'err.E_NOT_FOUND': 'Item not found. Refresh the page.',
+    'err.E_SELF': "You can't remove admin rights from your own account or disable it.",
+    'err.E_LAST_ADMIN': 'At least one active admin account is required.',
+    'err.E_CONFIG': 'System setup is incomplete. Run hr_setup from the editor.',
+    'err.E_NETWORK': "Can't reach the server. Check your connection and try again.",
+    'err.E_NO_GAS': 'Open this page from the system link.',
+    'err.E_NO_FN': 'The deployed version is missing files. Deploy a new version.',
+    'err.E_UNKNOWN': 'Something went wrong.'
+  }
+};
+
+/** الصفحات تضيف نصوصها: i18nAdd({ar:{...}, en:{...}}) */
+function i18nAdd(extra) {
+  ['ar', 'en'].forEach(function (l) {
+    var src = (extra && extra[l]) || {};
+    Object.keys(src).forEach(function (k) { I18N[l][k] = src[k]; });
+  });
+}
+
+function t(key, vars) {
+  var s = I18N[LANG][key];
+  if (s == null) s = I18N.ar[key];
+  if (s == null) return key;
+  var v = {
+    min: BOOT.pwdMin || 8,
+    minutes: BOOT.lockMinutes || 10,
+    mb: (BOOT.apply && BOOT.apply.cvMaxMb) || 5,
+    company: (BOOT.brand && BOOT.brand.name) || 'Cairo 3A'
+  };
+  if (vars) Object.keys(vars).forEach(function (k) { v[k] = vars[k]; });
+  return String(s).replace(/\{(\w+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; });
+}
+
+/** نص مترجم بمتغيرات — بيتحدّث تلقائيًا لما اللغة تتغير */
+function setI18n(el, key, vars) {
+  if (!el) return;
+  el.setAttribute('data-i18n', key);
+  el._i18nVars = vars || null;
+  el.textContent = t(key, vars);
+}
+
+function applyI18n(root) {
+  var d = document.documentElement;
+  d.setAttribute('lang', LANG);
+  d.setAttribute('dir', LANG === 'en' ? 'ltr' : 'rtl');
+  var scope = root || document;
+  scope.querySelectorAll('[data-i18n]').forEach(function (el) {
+    el.textContent = t(el.getAttribute('data-i18n'), el._i18nVars);
+  });
+  scope.querySelectorAll('[data-i18n-ph]').forEach(function (el) {
+    el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph')));
+  });
+  scope.querySelectorAll('[data-i18n-label]').forEach(function (el) {
+    var s = t(el.getAttribute('data-i18n-label'));
+    el.setAttribute('aria-label', s);
+    el.setAttribute('title', s);
+  });
+  document.querySelectorAll('[data-lang-code]').forEach(function (el) {
+    el.textContent = LANG === 'ar' ? 'EN' : 'ع';
+  });
+}
+
+function toggleLang() {
+  LANG = LANG === 'ar' ? 'en' : 'ar';
+  store(KEYS.lang, LANG);
+  applyI18n();
+  if (typeof onLangChange === 'function') onLangChange();
+}
+
+/* ============================================================
+   الثيم
+   ============================================================ */
+function currentTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+}
+function syncThemeIcons() {
+  var dark = currentTheme() === 'dark';
+  document.querySelectorAll('[data-theme-icon]').forEach(function (i) {
+    i.className = dark ? 'bi bi-sun' : 'bi bi-moon-stars';
+  });
+}
+function toggleTheme() {
+  var th = currentTheme() === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', th);
+  store(KEYS.theme, th);
+  syncThemeIcons();
+}
+
+/* ============================================================
+   استدعاء السيرفر
+   run('fn', a, b).then(res).catch(handleErr)
+   - أي {ok:false, code} من السيرفر بيتحول rejection بنفس الكود
+   ============================================================ */
+function run(fn) {
+  var args = [].slice.call(arguments, 1);
+  return new Promise(function (resolve, reject) {
+    if (!window.google || !google.script || !google.script.run) {
+      var e = new Error('E_NO_GAS'); e.code = 'E_NO_GAS'; reject(e); return;
+    }
+    var runner = google.script.run
+      .withSuccessHandler(function (res) {
+        if (res && res.ok === false) {
+          var err = new Error(res.code || 'E_UNKNOWN');
+          err.code = res.code || 'E_UNKNOWN';
+          err.data = res;
+          reject(err);
+        } else {
+          resolve(res);
+        }
+      })
+      .withFailureHandler(function (err) { reject(err); });
+    if (typeof runner[fn] !== 'function') {
+      var nf = new Error('E_NO_FN: ' + fn); nf.code = 'E_NO_FN'; reject(nf); return;
+    }
+    runner[fn].apply(null, args);
+  });
+}
+
+function errCode(err) {
+  if (err && err.code) return err.code;
+  var m = String((err && err.message) || err || '');
+  var c = m.match(/\bE_[A-Z_]+\b/);
+  if (c) return c[0];
+  if (/NetworkError|HTTP 0|Failed to fetch|connection/i.test(m)) return 'E_NETWORK';
+  return '';
+}
+
+function errText(err) {
+  var c = errCode(err);
+  if (c && I18N.ar['err.' + c] != null) return t('err.' + c, err && err.data);
+  var m = String((err && err.message) || err || '').replace(/^(Error|Exception):\s*/, '');
+  return m || t('err.E_UNKNOWN');
+}
+
+/** المعالج العام: الجلسة المنتهية تحجب الصفحة، وغير كده تنبيه */
+function handleErr(err) {
+  if (window.console) console.error(err);
+  if (errCode(err) === 'E_AUTH') { sessionExpired(); return; }
+  toast(errText(err), 'error');
+}
+
+/* ============================================================
+   واجهة عامة
+   ============================================================ */
+function toast(msg, type) {
+  type = type || 'info';
+  var icons = {
+    success: 'bi-check-circle-fill', error: 'bi-exclamation-octagon-fill',
+    warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill'
+  };
+  var box = $('toastBox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'toastBox';
+    box.setAttribute('role', 'status');
+    box.setAttribute('aria-live', 'polite');
+    document.body.appendChild(box);
+  }
+  var el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.innerHTML = '<i class="bi ' + icons[type] + '" aria-hidden="true"></i><span></span>';
+  el.querySelector('span').textContent = msg;
+  box.appendChild(el);
+  setTimeout(function () {
+    el.classList.add('hide');
+    setTimeout(function () { el.remove(); }, 320);
+  }, type === 'error' ? 5200 : 3400);
+}
+
+/**
+ * يعلّم الحقل كناقص.
+ * key اختياري لنص خطأ مختلف؛ من غيره بيرجع النص الأصلي للحقل
+ */
+function mark(id, on, key) {
+  var f = $(id);
+  if (!f) return;
+  f.classList.toggle('invalid', !!on);
+  var inp = f.querySelector('input:not([type=file]),select,textarea');
+  if (inp) { if (on) inp.setAttribute('aria-invalid', 'true'); else inp.removeAttribute('aria-invalid'); }
+  var m = f.querySelector('.err-msg');
+  if (m) {
+    if (m._defKey === undefined) m._defKey = m.getAttribute('data-i18n') || '';
+    var k = key || m._defKey;
+    if (k) setI18n(m, k);
+  }
+}
+
+/** زرار مشغول: يغيّر النص المترجم ويقفل الزرار */
+function setBusy(btn, on, key) {
+  if (!btn) return;
+  var lbl = btn.querySelector('[data-i18n]') || btn;
+  if (on) {
+    if (!btn._label) btn._label = lbl.getAttribute('data-i18n');
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    if (key) setI18n(lbl, key);
+  } else {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    if (btn._label) setI18n(lbl, btn._label);
+  }
+}
+
+function toggleReveal(btn) {
+  var inp = btn.parentNode.querySelector('input');
+  var show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+  btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+}
+
+function hidePreload() { var p = $('preload'); if (p) p.hidden = true; }
+
+function applyBrand() {
+  var b = BOOT.brand || {};
+  document.querySelectorAll('[data-brand-logo]').forEach(function (box) {
+    box.innerHTML = '';
+    if (b.logo) {
+      var img = new Image();
+      img.alt = b.name || '';
+      img.src = b.logo;
+      box.appendChild(img);
+    } else {
+      box.innerHTML = '<i class="bi bi-people-fill" aria-hidden="true"></i>';
+    }
+  });
+}
+
+function initials(u) {
+  var n = String((u && (u.fullName || u.username)) || '?').trim().split(/\s+/);
+  return (n[0].charAt(0) + (n[1] ? n[1].charAt(0) : '')).toUpperCase();
+}
+
+/* ---------- النوافذ ---------- */
+function openModal(id) {
+  var m = $(id);
+  if (!m) return;
+  m._opener = document.activeElement;
+  m.classList.add('open');
+  var f = m.querySelector('input:not([hidden]),select,textarea');
+  if (f) setTimeout(function () { f.focus(); }, 40);
+}
+function closeModal(id) {
+  var m = $(id);
+  if (!m || !m.classList.contains('open')) return;
+  m.classList.remove('open');
+  if (m._opener && m._opener.focus) m._opener.focus();
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(function (m) { closeModal(m.id); });
+});
+document.addEventListener('click', function (e) {
+  if (e.target.classList && e.target.classList.contains('modal')) closeModal(e.target.id);
+});
+
+/* ============================================================
+   التنقل
+   صفحات GAS بتتعرض جوه iframe، والتنقل من الكود ممكن يتمنع من
+   غير ضغطة من المستخدم. عشان كده:
+   - كل الروابط <a target="_top"> حقيقية
+   - go() بتحاول، ولو الصفحة مااتقفلتش يظهر زرار متابعة
+   ============================================================ */
+function pageUrl(page, params) {
+  var url = (BOOT.baseUrl || '') + '?page=' + encodeURIComponent(page);
+  if (params) Object.keys(params).forEach(function (k) {
+    url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  });
+  return url;
+}
+
+function bindPageLinks(root) {
+  (root || document).querySelectorAll('a[data-page]').forEach(function (a) {
+    a.href = pageUrl(a.getAttribute('data-page'));
+    a.target = '_top';
+  });
+}
+
+function go(page) {
+  var url = pageUrl(page);
+  try { window.top.location.href = url; } catch (e) { /* ممنوع — الزرار هيظهر */ }
+  setTimeout(function () { showContinue(url); }, 2500);
+}
+
+function showContinue(url) {
+  var bar = $('continueBar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'continueBar';
+    bar.className = 'continue-bar';
+    bar.innerHTML = '<span data-i18n="ui.tapContinue"></span>' +
+                    '<a class="btn btn-primary" target="_top" data-i18n="ui.continue"></a>';
+    document.body.appendChild(bar);
+  }
+  bar.querySelector('a').href = url;
+  applyI18n(bar);
+}
+
+/* ============================================================
+   الجلسة
+   ============================================================ */
+function getToken() { return store(KEYS.token) || ''; }
+
+function saveSession(res) {
+  store(KEYS.token, res.token);
+  store(KEYS.user, JSON.stringify(res.user));
+  ME = res.user;
+}
+
+function clearSession() {
+  store(KEYS.token, null);
+  store(KEYS.user, null);
+  ME = null;
+}
+
+/**
+ * أول سطر في أي صفحة محمية:
+ * requireAuth(['ADMIN','HR']).then(function(me){ ... }).catch(function(){});
+ */
+function requireAuth(roles) {
+  var tok = getToken();
+  if (!tok) {
+    sessionExpired();
+    return Promise.reject(new Error('E_AUTH'));
+  }
+  return run('auth_me', tok).then(function (u) {
+    ME = u;
+    store(KEYS.user, JSON.stringify(u));
+    if (roles && roles.indexOf(u.role) < 0) {
+      showBlocker('forbidden');
+      throw new Error('E_FORBIDDEN');
+    }
+    return u;
+  }, function (err) {
+    if (errCode(err) === 'E_AUTH') sessionExpired();
+    else showBlocker('error', errText(err));
+    throw err;
+  });
+}
+
+function sessionExpired() {
+  clearSession();
+  showBlocker('expired');
+}
+
+function showBlocker(kind, text) {
+  hidePreload();
+  var cfg = {
+    expired:   { icon: 'bi-lock',        title: 'auth.expiredTitle',   body: 'auth.expiredBody',   btn: 'auth.toLogin', page: 'login' },
+    forbidden: { icon: 'bi-shield-lock', title: 'auth.forbiddenTitle', body: 'auth.forbiddenBody', btn: 'auth.toHome',  page: 'home' },
+    error:     { icon: 'bi-wifi-off',    title: 'auth.errorTitle',     body: '',                   btn: 'ui.retry',     page: BOOT.page || 'login' }
+  }[kind];
+
+  var el = $('blocker');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'blocker';
+    el.className = 'blocker';
+    document.body.appendChild(el);
+  }
+  el.innerHTML =
+    '<div class="blocker-card" role="alertdialog" aria-modal="true" aria-labelledby="blkTitle">' +
+      '<div class="blocker-ico"><i class="bi ' + cfg.icon + '" aria-hidden="true"></i></div>' +
+      '<h2 id="blkTitle" data-i18n="' + cfg.title + '"></h2>' +
+      '<p class="muted blk-text"' + (cfg.body ? ' data-i18n="' + cfg.body + '"' : '') + '></p>' +
+      '<a class="btn btn-primary btn-block" data-page="' + cfg.page + '" data-i18n="' + cfg.btn + '"></a>' +
+    '</div>';
+  if (!cfg.body) el.querySelector('.blk-text').textContent = text || '';
+  bindPageLinks(el);
+  applyI18n(el);
+  el.hidden = false;
+}
+
+function logout() {
+  var tok = getToken();
+  clearSession();
+  var done = function () { go('login'); };
+  run('auth_logout', tok).then(done, done);
+}
+
+/* ---------- تهيئة عامة ---------- */
+applyI18n();
+syncThemeIcons();
+applyBrand();
+bindPageLinks();
+</script>
+
+<script>
+i18nAdd({
+  ar: {
+    'ex.s1': 'بياناتك', 'ex.s2': 'الأسباب', 'ex.s3': 'تم',
+    'ex.empId': 'الكود الوظيفي', 'ex.empIdReq': 'اكتب الكود الوظيفي',
+    'ex.code_nid4': 'آخر 4 أرقام من الرقم القومي', 'ex.code_phone4': 'آخر 4 أرقام من رقم الموبايل المسجّل',
+    'ex.code_either': 'آخر 4 أرقام من الرقم القومي أو الموبايل',
+    'ex.codeHint': 'للتأكد إنك صاحب الكود — الرقم نفسه مابيتسجلش.',
+    'ex.codeReq': 'اكتب 4 أرقام', 'ex.next': 'متابعة', 'ex.checking': 'جارٍ التحقق...',
+    'ex.secure': 'إجاباتك بتوصل لإدارة الموارد البشرية بس، وبتتستخدم لتحسين بيئة العمل.',
+    'ex.qReasons': 'إيه أسباب تركك للشغل؟',
+    'ex.reasonsSub': 'اختار لحد {n} أسباب — أو سبب واحد لو ده الأساسي.',
+    'ex.reasonsSub1': 'اختار السبب الأساسي.',
+    'ex.count': 'اخترت {a} من {b}', 'ex.full': 'وصلت للحد ({b}) — شيل سبب عشان تختار غيره',
+    'ex.reasonsReq': 'اختار سبب واحد على الأقل',
+    'ex.qPrimary': 'أهم سبب فيهم؟', 'ex.primaryReq': 'حدد أهم سبب',
+    'ex.notesOpt': 'حابب تضيف حاجة؟ (اختياري)', 'ex.notesNeed': 'اكتب التفاصيل',
+    'ex.notesSub': 'أي تفاصيل أو اقتراحات تساعدنا نتحسن.',
+    'ex.notesReq': 'الملاحظات مطلوبة — خصوصًا لو اخترت "سبب آخر"',
+    'ex.qRecommend': 'لو حد من معارفك بيدوّر على شغل، قد إيه هترشّحله الشركة؟',
+    'ex.recommendSub': '0 = مستبعد تمامًا · 10 = أكيد هرشّحها', 'ex.no0': 'مستبعد', 'ex.yes10': 'أكيد',
+    'ex.recommendReq': 'اختار رقم من 0 لـ 10',
+    'ex.qReturn': 'لو الظروف اتغيّرت، ممكن ترجع تشتغل معانا؟', 'ex.rYes': 'أيوه', 'ex.rMaybe': 'ممكن', 'ex.rNo': 'لأ',
+    'ex.returnReq': 'اختار إجابة',
+    'ex.qLast': 'آخر يوم شغل (اختياري)', 'ex.lastBad': 'التاريخ مش منطقي',
+    'ex.back': 'رجوع', 'ex.send': 'إرسال', 'ex.sending': 'جارٍ الإرسال...',
+    'ex.hello': '{title} · {company}', 'ex.meta2': '{loc} · مدة الخدمة: {since}',
+    'ex.y': '{n} سنة', 'ex.m': '{n} شهر', 'ex.and': ' و', 'ex.d': 'أقل من شهر',
+    'ex.thanksTitle': 'وصلنا ردّك', 'ex.ref': 'رقم الرد: {ref}',
+    'ex.closedTitle': 'الاستبيان مقفول',
+    'ex.E_NOMATCH': 'البيانات مش مطابقة. اتأكد من الكود والأرقام. فاضل {left} محاولات.',
+    'ex.E_NOMATCH0': 'البيانات مش مطابقة.',
+    'ex.E_LOCKED': 'محاولات كتير غلط. استنى نص ساعة وجرّب تاني، أو كلّم الموارد البشرية.',
+    'ex.E_NOTELIGIBLE': 'الاستبيان متاح للي سابوا الشغل مؤخرًا أو بيسيبوه حاليًا. لو ده غلط، كلّم الموارد البشرية.',
+    'ex.E_DONE': 'انت ملأت الاستبيان قبل كده يوم {at}. شكرًا ليك.',
+    'ex.E_NOVERIFY': 'مش قادرين نتحقق من بياناتك أونلاين. كلّم الموارد البشرية.',
+    'ex.E_EXPIRED': 'الجلسة انتهت. ادخل بياناتك تاني من فضلك.',
+    'ex.E_CLOSED': 'الاستبيان اتقفل حالًا.',
+    'ex.E_BUSY': 'في ضغط دلوقتي. جرّب كمان دقيقة.',
+    'ex.E_NETWORK': 'مفيش اتصال بالإنترنت. اتأكد وجرّب تاني.',
+    'ex.E_UNKNOWN': 'حصلت مشكلة. جرّب تاني.',
+    'ex.fixAbove': 'كمّل الأسئلة المطلوبة'
+  },
+  en: {
+    'ex.s1': 'Your details', 'ex.s2': 'Reasons', 'ex.s3': 'Done',
+    'ex.empId': 'Employee ID', 'ex.empIdReq': 'Enter your employee ID',
+    'ex.code_nid4': 'Last 4 digits of your national ID', 'ex.code_phone4': 'Last 4 digits of your registered mobile',
+    'ex.code_either': 'Last 4 digits of your national ID or mobile',
+    'ex.codeHint': 'Confirms the ID is yours — the digits are not stored.',
+    'ex.codeReq': 'Enter 4 digits', 'ex.next': 'Continue', 'ex.checking': 'Checking…',
+    'ex.secure': 'Your answers go to HR only and are used to improve the workplace.',
+    'ex.qReasons': 'Why are you leaving?',
+    'ex.reasonsSub': 'Pick up to {n} reasons — or just one if that is the main one.',
+    'ex.reasonsSub1': 'Pick the main reason.',
+    'ex.count': '{a} of {b} selected', 'ex.full': 'Limit reached ({b}) — remove one to pick another',
+    'ex.reasonsReq': 'Pick at least one reason',
+    'ex.qPrimary': 'Which one matters most?', 'ex.primaryReq': 'Choose the main reason',
+    'ex.notesOpt': 'Anything to add? (optional)', 'ex.notesNeed': 'Please add details',
+    'ex.notesSub': 'Any details or suggestions that would help us improve.',
+    'ex.notesReq': 'Notes are required — especially if you chose "Other"',
+    'ex.qRecommend': 'How likely are you to recommend the company to someone looking for a job?',
+    'ex.recommendSub': '0 = not at all · 10 = definitely', 'ex.no0': 'Not at all', 'ex.yes10': 'Definitely',
+    'ex.recommendReq': 'Pick a number from 0 to 10',
+    'ex.qReturn': 'If things changed, would you consider coming back?', 'ex.rYes': 'Yes', 'ex.rMaybe': 'Maybe', 'ex.rNo': 'No',
+    'ex.returnReq': 'Choose an answer',
+    'ex.qLast': 'Last working day (optional)', 'ex.lastBad': 'That date does not look right',
+    'ex.back': 'Back', 'ex.send': 'Submit', 'ex.sending': 'Sending…',
+    'ex.hello': '{title} · {company}', 'ex.meta2': '{loc} · service: {since}',
+    'ex.y': '{n} yr', 'ex.m': '{n} mo', 'ex.and': ' ', 'ex.d': 'under a month',
+    'ex.thanksTitle': 'Thank you', 'ex.ref': 'Reference: {ref}',
+    'ex.closedTitle': 'Survey closed',
+    'ex.E_NOMATCH': 'Those details do not match. {left} attempts left.',
+    'ex.E_NOMATCH0': 'Those details do not match.',
+    'ex.E_LOCKED': 'Too many wrong attempts. Wait 30 minutes or contact HR.',
+    'ex.E_NOTELIGIBLE': 'The survey is for employees leaving now or who left recently. If this is wrong, contact HR.',
+    'ex.E_DONE': 'You already filled the survey on {at}. Thank you.',
+    'ex.E_NOVERIFY': 'We cannot verify your details online. Please contact HR.',
+    'ex.E_EXPIRED': 'Your session expired. Please enter your details again.',
+    'ex.E_CLOSED': 'The survey was just closed.',
+    'ex.E_BUSY': 'Busy right now. Try again in a minute.',
+    'ex.E_NETWORK': 'No internet connection. Check it and try again.',
+    'ex.E_UNKNOWN': 'Something went wrong. Please try again.',
+    'ex.fixAbove': 'Please complete the required questions'
+  }
+});
+applyI18n();
+
+var CFG = null, EMP = null, TOKEN = '', PICK = [], PRIMARY = '', REC = null, RET = '', T0 = 0, BUSY = false;
+
+/* ---------- البداية ---------- */
+function startExit(cfg) {
+  CFG = cfg || {};
+  if (CFG.brand) { BOOT.brand = CFG.brand; applyBrand(); }
+  var co = (CFG.brand && CFG.brand.name) || 'Cairo 3A';
+  $('exCompany').textContent = co;
+  $('exLegal').textContent = '© ' + new Date().getFullYear() + ' ' + co;
+  $('exTitle').textContent = CFG.title || t('ex.closedTitle');
+  document.title = (CFG.title || '') + ' · ' + co;
+  if (CFG.ok === false) { showMsg('off', t('ex.closedTitle'), t('ex.E_UNKNOWN')); return; }
+  if (!CFG.enabled) { showMsg('off', t('ex.closedTitle'), CFG.closedMsg || ''); return; }
+  $('exIntro').textContent = CFG.intro || '';
+  var none = CFG.verify === 'none';
+  $('f_code').hidden = none;
+  if (!none) {
+    $('codeLbl').textContent = t('ex.code_' + CFG.verify);
+    $('codeHint').textContent = t('ex.codeHint');
+  }
+  buildForm();
+  setStep(1);
+  $('cardVerify').hidden = false;
+  setTimeout(function () { $('fEmp').focus(); }, 50);
+}
+
+function onLangChange() {
+  if (!CFG || !CFG.enabled) return;
+  if (CFG.verify !== 'none') { $('codeLbl').textContent = t('ex.code_' + CFG.verify); $('codeHint').textContent = t('ex.codeHint'); }
+  var keep = PICK.slice(), prim = PRIMARY;
+  buildForm(); PICK = keep; PRIMARY = prim; syncChips(); syncPrimary(); syncNotesTitle();
+  if (EMP) showEmp(EMP);
+}
+
+function setStep(n) {
+  document.querySelectorAll('#steps .step').forEach(function (s) {
+    var k = Number(s.getAttribute('data-s'));
+    s.className = 'step' + (k === n ? ' on' : k < n ? ' done' : '');
+    s.querySelector('i').textContent = k < n ? '✓' : k;
+  });
+}
+
+function alertBox(id, msg, warn) {
+  var a = $(id);
+  a.textContent = msg || '';
+  a.className = 'alert' + (msg ? ' show' : '') + (warn ? ' warn' : '');
+  if (msg) a.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+function showMsg(kind, title, text, ref) {
+  $('cardVerify').hidden = true; $('cardForm').hidden = true;
+  $('steps').hidden = kind !== 'ok';
+  if (kind === 'ok') setStep(4);
+  $('doneIco').className = 'res-ico ' + kind;
+  $('doneIco').innerHTML = '<i class="bi ' + (kind === 'ok' ? 'bi-check2-circle' : 'bi-door-closed') + '" aria-hidden="true"></i>';
+  $('doneTitle').textContent = title;
+  $('doneText').textContent = text || '';
+  $('doneRef').hidden = !ref;
+  if (ref) $('doneRef').textContent = t('ex.ref', { ref: ref });
+  $('cardDone').hidden = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ---------- التحقق ---------- */
+$('vForm').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  if (BUSY) return;
+  var emp = normDigits($('fEmp').value).replace(/\D/g, '');
+  var code = normDigits($('fCode').value).replace(/\D/g, '');
+  var bad = false;
+  mark('f_emp', !emp); if (!emp) bad = true;
+  if (CFG.verify !== 'none') { mark('f_code', code.length !== 4); if (code.length !== 4) bad = true; }
+  if (bad) return;
+  alertBox('vAlert', '');
+  BUSY = true; setBusy($('vBtn'), true, 'ex.checking');
+  run('exit_verify', { empId: emp, code: code })
+    .then(function (r) {
+      TOKEN = r.token; EMP = r.employee;
+      showEmp(EMP);
+      $('cardVerify').hidden = true; $('cardForm').hidden = false;
+      setStep(2); T0 = Date.now();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    })
+    .catch(function (err) {
+      var c = errCode(err) || 'E_UNKNOWN', d = (err && err.data) || {};
+      if (c === 'E_CLOSED') { showMsg('off', t('ex.closedTitle'), t('ex.E_CLOSED')); return; }
+      if (c === 'E_NOMATCH') { alertBox('vAlert', d.left != null ? t('ex.E_NOMATCH', { left: d.left }) : t('ex.E_NOMATCH0')); return; }
+      if (c === 'E_DONE') { alertBox('vAlert', t('ex.E_DONE', { at: d.at || '' }), true); return; }
+      alertBox('vAlert', t('ex.' + c) !== 'ex.' + c ? t('ex.' + c) : t('ex.E_UNKNOWN'));
+    })
+    .then(function () { BUSY = false; setBusy($('vBtn'), false); });
+});
+['fEmp', 'fCode'].forEach(function (id) {
+  $(id).addEventListener('input', function () { this.value = normDigits(this.value).replace(/\D/g, ''); });
+});
+
+function tenureText(days) {
+  if (days === '' || days == null) return '—';
+  var m = Math.floor(days / 30.4375);
+  if (m < 1) return t('ex.d');
+  if (m < 12) return t('ex.m', { n: m });
+  var y = Math.floor(m / 12), r = m % 12;
+  return t('ex.y', { n: y }) + (r ? t('ex.and') + t('ex.m', { n: r }) : '');
+}
+
+function showEmp(e) {
+  var en = LANG === 'en';
+  var name = (en && e.nameEn) || e.name || e.nameEn || '';
+  $('whoName').textContent = name;
+  $('whoAva').textContent = initials({ fullName: name });
+  $('whoMeta').innerHTML = '';
+  var l1 = document.createElement('span'), l2 = document.createElement('span');
+  l1.textContent = t('ex.hello', { title: (en && e.titleEn) || e.title || '—', company: e.company || '—' });
+  l2.textContent = t('ex.meta2', { loc: e.location || '—', since: tenureText(e.tenureDays) });
+  $('whoMeta').appendChild(l1); $('whoMeta').appendChild(l2);
+}
+
+/* ---------- الأسئلة ---------- */
+function rLabel(r) { return (LANG === 'en' && r.labelEn) || r.label; }
+
+function buildForm() {
+  var box = $('reasonBox'); box.innerHTML = '';
+  var byCat = {};
+  (CFG.reasons || []).forEach(function (r) { (byCat[r.cat] = byCat[r.cat] || []).push(r); });
+  (CFG.cats || []).forEach(function (c) {
+    var list = byCat[c.id];
+    if (!list || !list.length) return;
+    var wrap = document.createElement('div'); wrap.className = 'cat';
+    var h = document.createElement('div'); h.className = 'cat-name';
+    h.textContent = (LANG === 'en' && c.labelEn) || c.label;
+    var chips = document.createElement('div'); chips.className = 'chips';
+    list.forEach(function (r) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.setAttribute('data-id', r.id); b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = '<span class="box" aria-hidden="true"></span><span></span>';
+      b.children[1].textContent = rLabel(r);
+      b.addEventListener('click', function () { toggleReason(r.id); });
+      chips.appendChild(b);
+    });
+    wrap.appendChild(h); wrap.appendChild(chips); box.appendChild(wrap);
+  });
+  var max = CFG.maxReasons || 3;
+  $('reasonsSub').textContent = max > 1 ? t('ex.reasonsSub', { n: max }) : t('ex.reasonsSub1');
+
+  $('q_recommend').hidden = !CFG.askRecommend;
+  if (CFG.askRecommend) {
+    var sc = $('scale'); sc.innerHTML = '';
+    for (var i = 0; i <= 10; i++) {
+      var b2 = document.createElement('button');
+      b2.type = 'button'; b2.textContent = i; b2.setAttribute('aria-pressed', REC === i ? 'true' : 'false');
+      b2.className = i <= 6 ? 'd' : i <= 8 ? 'p' : 'g';
+      b2.setAttribute('aria-label', String(i));
+      (function (v) { b2.addEventListener('click', function () { REC = v; syncScale(); mark2('q_recommend', false); }); })(i);
+      sc.appendChild(b2);
+    }
+  }
+  $('q_return').hidden = !CFG.askReturn;
+  syncChips(); syncNotesTitle();
+}
+
+function toggleReason(id) {
+  var i = PICK.indexOf(id), max = CFG.maxReasons || 3;
+  if (i >= 0) PICK.splice(i, 1);
+  else if (PICK.length < max) PICK.push(id);
+  else if (max === 1) PICK = [id];
+  else return;
+  if (PICK.indexOf(PRIMARY) < 0) PRIMARY = '';
+  syncChips(); syncPrimary(); syncNotesTitle();
+  mark2('q_reasons', false);
+}
+
+function syncChips() {
+  var max = CFG.maxReasons || 3, full = PICK.length >= max && max > 1;
+  document.querySelectorAll('#reasonBox .chip').forEach(function (b) {
+    var on = PICK.indexOf(b.getAttribute('data-id')) >= 0;
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.querySelector('.box').textContent = on ? '✓' : '';
+    b.setAttribute('aria-disabled', !on && full ? 'true' : 'false');
+  });
+  var c = $('reasonCount');
+  c.textContent = max > 1 ? (full ? t('ex.full', { b: max }) : t('ex.count', { a: PICK.length, b: max })) : '';
+  c.className = 'counter' + (full ? ' full' : '');
+}
+
+function syncPrimary() {
+  var need = CFG.askPrimary && PICK.length > 1;
+  $('q_primary').hidden = !need;
+  if (!need) return;
+  var box = $('primBox'); box.innerHTML = '';
+  var byId = {};
+  (CFG.reasons || []).forEach(function (r) { byId[r.id] = r; });
+  PICK.forEach(function (id) {
+    var l = document.createElement('label'), inp = document.createElement('input'), sp = document.createElement('span');
+    inp.type = 'radio'; inp.name = 'primary'; inp.value = id; inp.checked = PRIMARY === id;
+    inp.addEventListener('change', function () { PRIMARY = id; mark2('q_primary', false); });
+    sp.textContent = rLabel(byId[id]);
+    l.appendChild(inp); l.appendChild(sp); box.appendChild(l);
+  });
+}
+
+function notesNeeded() {
+  if (CFG.notesRequired) return true;
+  var byId = {};
+  (CFG.reasons || []).forEach(function (r) { byId[r.id] = r; });
+  return PICK.some(function (id) { return byId[id] && byId[id].cat === 'other'; });
+}
+function syncNotesTitle() { $('notesTitle').textContent = notesNeeded() ? t('ex.notesNeed') : t('ex.notesOpt'); }
+
+function syncScale() {
+  document.querySelectorAll('#scale button').forEach(function (b, i) { b.setAttribute('aria-pressed', REC === i ? 'true' : 'false'); });
+}
+document.querySelectorAll('#retBox button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    RET = b.getAttribute('data-v');
+    document.querySelectorAll('#retBox button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    mark2('q_return', false);
+  });
+});
+$('fNotes').addEventListener('input', function () { $('noteChars').textContent = this.value.length; mark2('q_notes', false); });
+
+function mark2(id, on) { $(id).classList.toggle('invalid', !!on); }
+
+$('backBtn').addEventListener('click', function () {
+  $('cardForm').hidden = true; $('cardVerify').hidden = false; setStep(1);
+  alertBox('fAlert', ''); TOKEN = '';
+});
+
+/* ---------- الإرسال ---------- */
+$('sForm').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  if (BUSY) return;
+  var notes = $('fNotes').value.trim(), first = null;
+  var chk = function (id, bad) { mark2(id, bad); if (bad && !first) first = id; };
+  chk('q_reasons', !PICK.length);
+  chk('q_primary', CFG.askPrimary && PICK.length > 1 && PICK.indexOf(PRIMARY) < 0);
+  chk('q_notes', notesNeeded() && notes.length < 3);
+  chk('q_recommend', CFG.askRecommend && REC === null);
+  chk('q_return', CFG.askReturn && !RET);
+  if (first) { alertBox('fAlert', t('ex.fixAbove'), true); $(first).scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+  alertBox('fAlert', '');
+  BUSY = true; setBusy($('sBtn'), true, 'ex.sending');
+  run('exit_submit', {
+    token: TOKEN, reasons: PICK, primary: PICK.length === 1 ? PICK[0] : (PRIMARY || PICK[0]), notes: notes,
+    recommend: CFG.askRecommend ? REC : '', wouldReturn: CFG.askReturn ? RET : '', lastDay: $('fLast').value || '',
+    website: $('fWeb').value, elapsedMs: Date.now() - T0
+  })
+    .then(function (r) { showMsg('ok', t('ex.thanksTitle'), CFG.thanks || '', r && r.ref); })
+    .catch(function (err) {
+      var c = errCode(err) || 'E_UNKNOWN', d = (err && err.data) || {};
+      if (c === 'E_EXPIRED') { $('cardForm').hidden = true; $('cardVerify').hidden = false; setStep(1); alertBox('vAlert', t('ex.E_EXPIRED'), true); return; }
+      if (c === 'E_CLOSED') { showMsg('off', t('ex.closedTitle'), t('ex.E_CLOSED')); return; }
+      if (c === 'E_DONE') { showMsg('ok', t('ex.thanksTitle'), t('ex.E_DONE', { at: '' })); return; }
+      if (c === 'E_VALIDATION') {
+        var map = { reasons: 'q_reasons', primary: 'q_primary', notes: 'q_notes', recommend: 'q_recommend', wouldReturn: 'q_return', lastDay: 'q_last' };
+        if (map[d.field]) { mark2(map[d.field], true); $(map[d.field]).scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        alertBox('fAlert', t('ex.fixAbove'), true); return;
+      }
+      alertBox('fAlert', t('ex.' + c) !== 'ex.' + c ? t('ex.' + c) : t('ex.E_UNKNOWN'));
+    })
+    .then(function () { BUSY = false; setBusy($('sBtn'), false); });
+});
+
+/* المصدر: مع الصفحة (Apps Script) أو من الـ API (GitHub) */
+if (BOOT.exit) startExit(BOOT.exit);
+else if (typeof loadExitConfig === 'function') loadExitConfig();
+</script>
+</body>
+</html>
